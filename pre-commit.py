@@ -36,7 +36,7 @@ def latest_articles(directory, number):
 	latest_articles = []
 
 	for i in range(int(now.strftime('%Y')), 0, -1):
-		if counter>=25:
+		if counter>=number:
 			break
 
 		if os.path.isdir(directory+"/"+str(i)):
@@ -52,7 +52,7 @@ def latest_articles(directory, number):
 					if len(latest_articles) < number-counter:
 						counter+=len(articles_list)
 					else:
-						counter=25
+						counter=number
 
 	#Delete directory in file names
 	return latest_articles	
@@ -71,6 +71,13 @@ try:
 	changes = subprocess.check_output(["git", "diff", "--cached", "--name-status"], universal_newlines=True)
 except:
 	sys.exit("[ERROR] An error occured when running git diff.")
+
+#Set parameters
+with open("raw/params", "r") as params_fh:
+	params = {}
+	for line in params_fh.readlines():
+		option, value = line.split("=", 1)
+		params[option.strip()] = value.strip()
 
 #Fill lists for modified, deleted and added files
 modified_files = []
@@ -271,7 +278,6 @@ try:
 		header = header_fh.read()
 		tags_header = "<ul>"
 		for tag in tags:
-			print(tag)
 			tags_header += "<li><a href=\""+tag[4:-4]+".html\">"+tag[9:-4]+"</a></li>"
 		tags_header += "</ul>"
 		header = header.replace("@categories", tags_header, 1)
@@ -327,7 +333,7 @@ else:
 
 
 #Regenerate index file
-last_25_articles = latest_articles("gen/blog/2013/06/test.html", 25)
+last_25_articles = latest_articles("gen/", int(params["NB_ARTICLES_INDEX"]))
 try:
 	auto_dir("blog/index.html")
 	with open("blog/index.html", "w") as index_fh:
