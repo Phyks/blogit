@@ -95,6 +95,7 @@ for changed_file in changes:
 for filename in list(added_files):
 	if filename[:4] != "raw/":
 		added_files.remove(filename)
+		continue
 	
 	try:
 		int(filename[4:8])
@@ -104,6 +105,7 @@ for filename in list(added_files):
 for filename in list(modified_files):
 	if filename[:4] != "raw/":
 		modified_files.remove(filename)
+		continue
 	
 	try:
 		int(filename[4:6])
@@ -113,6 +115,7 @@ for filename in list(modified_files):
 for filename in list(deleted_files):
 	if filename[:4] != "raw/":
 		deleted_files.remove(filename)
+		continue
 	
 	try:
 		int(filename[4:6])
@@ -268,6 +271,7 @@ try:
 		header = header_fh.read()
 		tags_header = "<ul>"
 		for tag in tags:
+			print(tag)
 			tags_header += "<li><a href=\""+tag[4:-4]+".html\">"+tag[9:-4]+"</a></li>"
 		tags_header += "</ul>"
 		header = header.replace("@categories", tags_header, 1)
@@ -312,8 +316,18 @@ try:
 except IOError:
 	sys.exit("[ERROR] Unable to copy the footer.html file.")
 
+#Copy CSS files
+if not os.path.isfile("raw/css") or list_directory("raw/css") == []:
+	print("[INFO] (CSS) No CSS files in raw/css folder")
+else:
+	try:
+		shutil.copytree("raw/css", "blog/css")
+	except IOError:
+		sys.exit("[ERROR] An error occured while copying css files.")
+
+
 #Regenerate index file
-last_25_articles = latest_articles("gen/", 25)
+last_25_articles = latest_articles("gen/blog/2013/06/test.html", 25)
 try:
 	auto_dir("blog/index.html")
 	with open("blog/index.html", "w") as index_fh:
@@ -336,7 +350,7 @@ except IOError:
 for tag in list_directory("gen/tags"):
 	try:
 		auto_dir(tag.replace("gen/", "blog/"))
-		with open(tag.replace("gen/", "blog/"), "w") as tag_fh:
+		with open(tag.replace("gen/", "blog/")[:-4]+".html", "w") as tag_fh:
 			with open(tag, "r") as tag_gen_fh:
 				with open("gen/header.gen", "r") as header_fh:
 					tag_content = header_fh.read()
@@ -349,7 +363,7 @@ for tag in list_directory("gen/tags"):
 				with open("gen/footer.gen", "r") as footer_handler:
 					tag_content += footer_handler.read()
 			tag_fh.write(tag_content)
-			print("[INFO] (TAGS) Tag page for "+tag+" has been generated successfully.")
+			print("[INFO] (TAGS) Tag page for "+tag[9:-4]+" has been generated successfully.")
 	except IOError:
 		sys.exit("[ERROR] An error occured while generating tag page \""+tag[9:-4]+"\"")
 
