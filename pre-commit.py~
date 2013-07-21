@@ -1,0 +1,248 @@
+#!/usr/bin/python
+
+#TODO : gitignore
+#unlink => try ... except -> no exception on filenotfound
+#filename[4:] not good
+
+import sys
+import shutil
+import os
+import datetime
+import subprocess
+
+def isset(variable):
+	return variable in locals() or variable in globals()
+
+def list_directory(path): 
+    fichier=[] 
+    for root, dirs, files in os.walk(path): 
+        for i in files: 
+            fichier.append(os.path.join(root, i)) 
+    return fichier
+
+def get_tags(fh):
+	line = fh.readline()
+	while "@tags=" not in line:
+		line = fh.readline()
+	if "@tags" not in line:
+		return []
+		
+	line = line.strip() #Delete \n at the end of the line
+	tag_pos = line.find("@tags=")
+	tags = line[tag_pos+6:].split(",")
+	return tags
+
+
+#Find the changes to be committed
+try:
+	#TODO : Check this command
+	changes = subprocess.check_output(["git", "diff", "--cached", "--name-status"], universal_newlines=True)
+except:
+	sys.stderr.write("[ERROR] An error occured when running git diff")
+	sys.exit(1)
+
+#Fill lists for modified, deleted and added files
+modified_files = []
+deleted_files = []
+added_files = []
+
+changes = changes.strip().split("\n")
+
+for changed_file in changes:
+	if changed_file[0] == "A":
+		added_files.append(changed_file[changed_file.index("\t")+1:])
+	elif changed_file[0] == "M":
+		modified_files.append(changed_file[changed_file.index("\t")+1:])
+	elif changed_file[0] == "D":
+		deleted_files.append(changed_file[changed_file.index("\t")+1:])
+	else:
+		sys.stderr.write("[ERROR] An error occured when running git diff")
+		sys.exit(1)
+
+print("[INFO] Added files : "+", ".join(added_files))
+print("[INFO] Modified files : "+", ".join(modified_files))
+print("[INFO] Deleted filed : "+", ".join(deleted_files))
+
+print("[INFO] Updating tags for added and modified files")
+for filename in added_files:
+	with open(filename, 'r') as fh:
+		tags = get_tags(fh)
+		if len(tags) > 0:
+			for tag in tags:
+				try:
+					with open("gen/tags/"+tag+".tmp", 'a+') as tag_file:
+						tag_file.seek(0)
+						if filename[4:] not in tag_file.read():
+							tag_file.write(filename[4:]+"\n") 
+						print("[INFO] (TAGS) Found tag "+tag+" for article "+filename[4:])		
+						pass
+				except IOError:
+					sys.stderr.write("[ERROR] (TAGS) New tag found but error occured in article "+filename[4:]+": "+tag)
+		else:
+			sys.stderr.write("[ERROR] (TAGS) In added article "+filename[4:]+" : No tags found !")
+
+for filename in modified_files:
+	with open(filename, 'r') as fh:
+		tags = get_tags(fh)
+		if(len(tags)) > 0:
+			for tag in list_directory("gen/tags/"):
+				try:
+					with open(tag, 'r+') as tag_file:
+						if tag[tag.index("tags/") + 5:tag.index(".tmp")] in tags and filename[4:] not in tag_file.read():
+								tag_file.seek(0, 2) #Append to end of file
+								tag_file.write(filename[4:]+"\n")
+								print("[INFO] (TAGS) Found new tag "+tag[:tag.index(".tmp")+" for modified article "+filename[4:])
+						if tag[tag.index("tags/") + 5:tag_index(".tmp")] not in tags and filename[4:] in tag_file.read():
+								old_tag_file_content = tag_file.read()
+								tag_file.truncate()
+								tag_file.write(old_tag_file_content.replace(filename"\n", ""))
+								print("[INFO] (TAGS) Deleted tag "+tag[:tag.index(".tmp")+" in modified article "+filename[4:])
+				except IOError:
+					sys.stderr.write("[ERROR] (TAGS) An error occured when parsing tags of article "+filename[4:])
+		else:
+			sys.stderr.write("[ERROR] (TAGS) In modified article "+filename[4:]+" : No tags found !")
+
+
+#Delete tags for deleted files and delete all generated files
+for filename in deleted_files:
+	with open(filename, 'r') as fh:
+		tags = get_tags(fh)
+		if len(tags) > 0:
+			for tag in tags:
+				try:
+					with open("gen/tags/"+tag+".tmp", 'r+') as tag_file:
+						old_tag_file_content = tag_file.read()
+						tag_file.truncate()
+						#Delete file in tag
+						tag_file.write(old_tag_file_content).replace(filename+"\n", ""))
+				except IOError:
+					sys.stderr.write("[ERROR] An error occured while deleting article "+filename[4:]+" from tags files")
+		else:
+			sys.stderr.write("[ERROR] (TAGS) In deleted article "+filename[4:]+" : No tags found !")
+	#Delete generated files
+	os.unlink("gen/"+filename[4:-5]+".gen")
+	os.unlink("blog/"+filename)
+	print("[INFO] Deleted article "+filename[4:]+" in both gen and blog directories")
+
+#Delete empty tags files 
+for tag in list_directory("gen/tags"):
+	with open(tag, 'r') as tag_file:
+		content = tag_file.read().strip()
+	if content == '':
+		os.unlink(tag)
+		#TODO : Delete tag in blog directory too
+		print("[INFO] (TAGS) No more article with tag "+tag[]+", deleting it.")
+
+#TODO ||
+#	  \/
+
+#(Re)Generate HTML files
+for filename in added_files:
+	with open(filename, 'r') as fh:
+		#Generate HTML for the updated articles
+		for line in fh.readlines():
+			if "@title=" in line:
+				line = line.strip()
+				title_pos = line.find("@title=")
+				title = line[title_pos+7:]
+				continue
+			
+			if "@date=" in line:
+				line = line.strip()
+				date_pos = line.find("@date=")
+				date = line[date_pos+6:]
+				continue
+			
+			if isset("date") and isset("title"):
+				break
+
+		fh.seek(0)
+		article = fh.read()
+
+		try:
+			with open("gen/"+filename[4:-5]+".gen", 'w') as article_file:
+				article_file.write("<article><nav class=\"aside_article\"></nav><div class=\"article\"><h1>"+title+"</h1>"+article+"<p class=\"date\">"+date+"</p></div>\n")
+				print("[GEN ARTICLES] Article "+filename[4:]+" generated")
+		except:
+			print("[GEN ARTICLES ERROR] An error occurred while generating article "+filename[4:])
+
+#Generate headers file (except title)
+with open("raw/header.html") as header_fh:
+	#Tags
+	tags = os.listdir("gen/tags")
+	header = header_fh.read()
+	tags_header = "<ul>"
+	for tag in tags:
+		tags_header += "<li><a href=\"tags/"+tag[:-4]+".html\">"+tag[:-4]+"</a></li>"
+	tags_header += "</ul>"
+	header = header.replace("@categories", tags_header, 1)
+
+	#Articles
+	latest_articles = list_directory("gen")
+	latest_articles = [i for i in latest_articles if i[4:8].isdigit()]
+	latest_articles.sort()
+	articles_header = "<ul>"
+	for article in latest_articles[0:5]:
+		with open(article, 'r') as fh:
+			line = fh.readline()
+			while "@title" not in line:
+				line = fh.readline()
+			line = line.strip()
+			title_pos = line.find("@title=")
+			title = line[title_pos+7:]
+
+			articles_header += "<li><a href=\""+article[4:-4]+".html\">"+title+"</a></li>"
+	articles_header += "</ul>"
+	header = header.replace("@articles", articles_header, 1)
+
+	with open("gen/header.gen", "w") as header_gen_fh:
+		header_gen_fh.write(header)
+		print("[GEN HEADER] Header has been generated successfully")
+
+#Generate footer file
+shutil.copy("raw/footer.html", "gen/footer.gen")
+print("[GEN FOOTER] Footer has been generated successfully")
+
+#Regenerate index file
+#* First, get last 25 articles
+last_25_articles = latest_articles[0:25]
+#* Then generate effectively the index file
+with open("blog/index.html", "w") as index_fh:
+	with open("gen/header.gen", "r") as header_gen_fh:
+		index = header_gen_fh.read()
+	for article in last_25_articles:
+		with open("gen/"+article, "r") as article_fh:
+			index += article_fh.read()
+	with open("gen/footer.gen") as footer_gen_fh:
+		index += footer_gen_fh.read()
+	index_fh.write(index)
+
+#Regenerate tags pages
+for tag in listdir("gen/tags"):
+	if not isdir(tag):
+		with open(tag) as tag_fh:
+			with open("gen/header.gen") as header_handler:
+				tag_content = header_handler.read()
+				tag_content.replace("<title>@titre</title", "<title>"+tag+"</title>")
+			tag_fh_lines = tag_fh.readlines()
+			for line in tag_fh_lines:
+				line = line.replace(".html", ".gen")
+				with open("gen/"+line) as article_handler:	
+					tag_content += "<section>"+article_handler.read()+"</section>\n"
+			with open("gen/footer.gen") as footer_handler:
+				tag_content += footer_handler.read()
+			tag_fh.write(tag_content)
+
+#Finish articles pages generation
+for filename in sys.argv[1]:
+	with open("blog/"+filename, "w") as article_fh:
+		with open("gen/header.gen", "r") as header_gen_fh:
+			article = header_gen_fh.read()
+		with open("gen/"+filename, "r") as article_gen_fh:
+			article += article_gen_fh.read()
+		with open("gen/footer.gen", "r") as footer_gen_fh:
+			article += footer_gen_fh.read()
+		article_fh.write(article)
+
+
+#Generate RSS
