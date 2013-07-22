@@ -31,7 +31,7 @@ def get_tags(fh):
 
     line = line.strip()  # Delete \n at the end of the line
     tag_pos = line.find("@tags=")
-    tags = line[tag_pos+6:].split(",")
+    tags = [x.strip() for x in line[tag_pos+6:].split(",")]
     return tags
 
 
