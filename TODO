@@ -1,5 +1,8 @@
 Finish gen.py -> RSS
-Recherche ?
-Pages par années / mois
+Search ?
 What happen when a file is moved with git ?
 Flake8 the whole thing ! :)
+
+Known bugs:
+==========
+* Articles in page by month and page by year are not sorted by date

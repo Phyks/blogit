@@ -9,7 +9,7 @@ import datetime
 import subprocess
 
 def isset(variable):
-	return variable in locals() or variable in globals()
+    return variable in locals() or variable in globals()
 
 def list_directory(path): 
     fichier=[] 
