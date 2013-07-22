@@ -108,6 +108,19 @@ for filename in list(added_files):
 		int(filename[4:8])
 	except ValueError:
 		added_files.remove(filename)
+		continue
+	
+	if filename[-4:] != "html" and filename[-6:] != "ignore":
+		print("[INFO] (Not HTML file) Copying directly not html file "+filename[4:]+" to blog dir.")
+		auto_dir("blog/"+filename[4:])
+		shutil.copy(filename, "blog/"+filename[4:])
+		added_files.remove(filename)
+		continue
+
+	if filename[-6:] == "ignore":
+		print("[INFO] (Not published) Found not published article "+filename[4:-7]+".")
+		added_files.remove(filename)
+		continue
 
 for filename in list(modified_files):
 	if filename[:4] != "raw/":
@@ -118,6 +131,19 @@ for filename in list(modified_files):
 		int(filename[4:6])
 	except ValueError:
 		modified_files.remove(filename)
+		continue
+	
+	if filename[-4:] != "html" and filename[-6:] != "ignore":
+		print("[INFO] (Not HTML file) Updating directly not html file "+filename[4:]+" to blog dir.")
+		auto_dir("blog/"+filename[4:])
+		shutil.copy(filename, "blog/"+filename[4:])
+		modified_files.remove(filename)
+		continue
+
+	if filename[-6:] == "ignore":
+		print("[INFO] (Not published) Found not published article "+filename[4:-7]+".")
+		added_files.remove(filename)
+		continue
 
 for filename in list(deleted_files):
 	if filename[:4] != "raw/":
@@ -128,7 +154,19 @@ for filename in list(deleted_files):
 		int(filename[4:6])
 	except ValueError:
 		deleted_files.remove(filename)
+		continue
 
+	if filename[-4:] != "html" and filename[-6:] != "ignore":
+		print("[INFO] (Not HTML file) Copying directly not html file "+filename[4:]+" to blog dir.")
+		auto_dir("blog/"+filename[4:])
+		shutil.copy(filename, "blog/"+filename[4:])
+		deleted_files.remove(filename)
+		continue
+
+	if filename[-6:] == "ignore":
+		print("[INFO] (Not published) Found not published article "+filename[4:-7]+".")
+		added_files.remove(filename)
+		continue
 
 
 print("[INFO] Added files : "+", ".join(added_files))
