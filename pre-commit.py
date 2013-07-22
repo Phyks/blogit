@@ -385,6 +385,8 @@ try:
 					index += article_fh.read()
 			with open("gen/footer.gen") as footer_gen_fh:
 				index += footer_gen_fh.read()
+
+			index = index.replace("@titre", params["BLOG_TITLE"], 1)
 			index_fh.write(index)
 			print("[INFO] (INDEX) Index page has been generated successfully.")
 		except IOError:
@@ -400,7 +402,7 @@ for tag in list_directory("gen/tags"):
 			with open(tag, "r") as tag_gen_fh:
 				with open("gen/header.gen", "r") as header_fh:
 					tag_content = header_fh.read()
-					tag_content.replace("<title>@titre</title", "<title>"+tag[4:-4]+"</title>")
+					tag_content = tag_content.replace("@titre", params["BLOG_TITLE"]+" - "+tag[4:-4], 1)
 				tag_gen_fh_lines = tag_gen_fh.readlines()
 				for line in tag_gen_fh_lines:
 					line = line.replace(".html", ".gen")
@@ -421,6 +423,15 @@ for filename in added_files+modified_files:
 			with open("gen/header.gen", "r") as header_gen_fh:
 				article = header_gen_fh.read()
 			with open("gen/"+filename[4:-5]+".gen", "r") as article_gen_fh:
+				line = article_gen_fh.readline()
+				while "@title" not in line:
+					line = article_gen_fh.readline()
+				line = line.strip()
+				title_pos = line.find("@title=")
+				title = line[title_pos+7:]
+				article_gen_fh.seek(0)
+
+				article = article.replace("@titre", params["BLOG_TITLE"]+" - "+title, 1)
 				article += article_gen_fh.read()
 			with open("gen/footer.gen", "r") as footer_gen_fh:
 				article += footer_gen_fh.read()
