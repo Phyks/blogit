@@ -6,5 +6,4 @@ Flake8 the whole thing ! :)
 
 Known bugs :
 ===========
-On article / tag pages : links are relative and don't work
 @titre not remplaced

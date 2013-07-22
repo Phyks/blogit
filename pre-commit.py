@@ -316,9 +316,11 @@ try:
 		header = header_fh.read()
 		tags_header = "<ul>"
 		for tag in tags:
-			tags_header += "<li><a href=\""+tag[4:-4]+".html\">"+tag[9:-4]+"</a></li>"
+			tags_header += "<li><a href=\""+params["BLOG_URL"]+tag[4:-4]+".html\">"+tag[9:-4]+"</a></li>"
 		tags_header += "</ul>"
 		header = header.replace("@categories", tags_header, 1)
+
+		header = header.replace("@blog_url", params["BLOG_URL"], 1)
 
 		#Articles
 		latest_articles_list = latest_articles("gen/", 5)
@@ -333,7 +335,7 @@ try:
 					title_pos = line.find("@title=")
 					title = line[title_pos+7:]
 
-					articles_header += "<li><a href=\""+article[4:-4]+".html\">"+title+"</a></li>"
+					articles_header += "<li><a href=\""+params["BLOG_URL"]+article[4:-4]+".html\">"+title+"</a></li>"
 			except IOError:
 				sys.exit("[ERROR] Unable to open file "+article+".")
 		articles_header += "</ul>"
