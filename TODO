@@ -2,7 +2,3 @@ What happen when a file is moved with git ?
 Flake8 the whole thing ! :)
 basepath ?
 tags / smileys / ...
-
-Known bugs:
-==========
-* Test RSS in Firefox (different view than traditionnal RSS view ?)

@@ -11,6 +11,7 @@ import subprocess
 
 from time import gmtime, strftime, mktime
 
+
 def isset(variable):
     return variable in locals() or variable in globals()
 
@@ -494,7 +495,7 @@ for i in years_list:
     except ValueError:
         continue
 
-    #Generate page per year 
+    #Generate page per year
     page_year = header_gen.replace("@titre", params["BLOG_TITLE"]+" - "+i, 1)
 
     months_list = os.listdir("blog/"+i)
@@ -508,7 +509,7 @@ for i in years_list:
 
         articles_list = list_directory("gen/"+i+"/"+j)
         articles_list.sort(key=lambda x: os.stat(x).st_mtime, reverse=True)
-        for article in  articles_list:
+        for article in articles_list:
             try:
                 with open(article, "r") as article_fh:
                     article_content = article_fh.read()
@@ -517,14 +518,13 @@ for i in years_list:
             except IOError:
                 sys.exit("[ERROR] Error while generating years and months pages. Check your gen folder, you may need to regenerate some articles. The error was due to "+article+".")
 
-
         page_month += footer_gen
         try:
             with open("blog/"+i+"/"+j+"/index.html", "w") as page_month_fh:
                 page_month_fh.write(page_month)
         except IOError:
-           sys.exit("[ERROR] Unable to write index file for "+i+"/"+j+".")
-    
+            sys.exit("[ERROR] Unable to write index file for "+i+"/"+j+".")
+
     page_year += footer_gen
     try:
         with open("blog/"+i+"/index.html", "w") as page_year_fh:
