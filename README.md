@@ -26,13 +26,15 @@ Important note : This is currently a beta version and the hook isn't set to run 
 
 Example of syntax for an article
 ================================
+```HTML
 <!--
 	@tags=*** //put here the tags for your article, comma-separated list
 	@titre=***i //Title for your article
 	@author=Phyks //Name of the author (not displayed by now)
 	@date=23062013-1337 //Date in the format DDMMYYYY-HHMM
 ->
-<article content> (== Whatever you want)
+<article content> (== Whatever you want)</article>
+```
 
 LICENSE
 =======
