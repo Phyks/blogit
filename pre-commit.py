@@ -78,8 +78,10 @@ def auto_dir(path):
 
 
 def replace_tags(article, search_list, replace_list):
+    return_string = article
     for search, replace in zip(search_list, replace_list):
-        re.sub(search, replace, article)
+        return_string = re.sub(search, replace, article)
+    return return_string
 
 
 try:
@@ -106,7 +108,7 @@ replace_list = []
 with open("raw/params", "r") as params_fh:
     params = {}
     for line in params_fh.readlines():
-        if line.strip() == "" or line.strip()[0] == "#":
+        if line.strip() == "" or line.strip().startswith("#"):
             continue
         option, value = line.split("=", 1)
         if option == "SEARCH":
@@ -134,11 +136,11 @@ if not force_regen:
         sys.exit("[ERROR] Nothing to do...")
 
     for changed_file in changes:
-        if changed_file[0] == "A":
+        if changed_file[0].startswith("A"):
             added_files.append(changed_file[changed_file.index("\t")+1:])
-        elif changed_file[0] == "M":
+        elif changed_file[0].startswith("M"):
             modified_files.append(changed_file[changed_file.index("\t")+1:])
-        elif changed_file[0] == "D":
+        elif changed_file[0].startswith("D"):
             deleted_files.append(changed_file[changed_file.index("\t")+1:])
         else:
             sys.exit("[ERROR] An error occured when running git diff.")
@@ -147,12 +149,12 @@ else:
     shutil.rmtree("gen/")
     added_files = list_directory("raw")
 
-if len(added_files) == 0 and len(modified_files) == 0 and len(deleted_files) == 0:
+if not added_files and not modified_files and not deleted_files:
     sys.exit("[ERROR] Nothing to do...")
 
 #Only keep modified raw articles files
 for filename in list(added_files):
-    if filename[:4] != "raw/":
+    if not filename.startswith("raw/"):
         added_files.remove(filename)
         continue
 
@@ -162,7 +164,7 @@ for filename in list(added_files):
         added_files.remove(filename)
         continue
 
-    if filename[-4:] != "html" and filename[-6:] != "ignore":
+    if not filename.endswith("html") and not filename.endswith("ignore"):
         print("[INFO] (Not HTML file) Copying directly not html file "+filename[4:]+" to blog dir.")
 
         auto_dir("blog/"+filename[4:])
@@ -170,13 +172,13 @@ for filename in list(added_files):
         added_files.remove(filename)
         continue
 
-    if filename[-6:] == "ignore":
+    if filename.endswith("ignore"):
         print("[INFO] (Not published) Found not published article "+filename[4:-7]+".")
         added_files.remove(filename)
         continue
 
 for filename in list(modified_files):
-    if filename[:4] != "raw/":
+    if not filename.startswith("raw/"):
         modified_files.remove(filename)
         continue
 
@@ -186,20 +188,20 @@ for filename in list(modified_files):
         modified_files.remove(filename)
         continue
 
-    if filename[-4:] != "html" and filename[-6:] != "ignore":
+    if not filename.endswith("html") and not filename.endswith("ignore"):
         print("[INFO] (Not HTML file) Updating directly not html file "+filename[4:]+" to blog dir.")
         auto_dir("blog/"+filename[4:])
         shutil.copy(filename, "blog/"+filename[4:])
         modified_files.remove(filename)
         continue
 
-    if filename[-6:] == "ignore":
+    if filename.endswith("ignore"):
         print("[INFO] (Not published) Found not published article "+filename[4:-7]+".")
         added_files.remove(filename)
         continue
 
 for filename in list(deleted_files):
-    if filename[:4] != "raw/":
+    if not filename.startswith("raw/"):
         deleted_files.remove(filename)
         continue
 
@@ -209,14 +211,14 @@ for filename in list(deleted_files):
         deleted_files.remove(filename)
         continue
 
-    if filename[-4:] != "html" and filename[-6:] != "ignore":
+    if not filename.endswith("html") and not filename.endswith("ignore"):
         print("[INFO] (Not HTML file) Copying directly not html file "+filename[4:]+" to blog dir.")
         auto_dir("blog/"+filename[4:])
         shutil.copy(filename, "blog/"+filename[4:])
         deleted_files.remove(filename)
         continue
 
-    if filename[-6:] == "ignore":
+    if filename.endswith("ignore"):
         print("[INFO] (Not published) Found not published article "+filename[4:-7]+".")
         added_files.remove(filename)
         continue
@@ -232,7 +234,7 @@ for filename in added_files:
     try:
         with open(filename, 'r') as fh:
             tags = get_tags(fh)
-            if len(tags) > 0:
+            if tags:
                 for tag in tags:
                     try:
                         auto_dir("gen/tags/"+tag+".tmp")
@@ -252,7 +254,7 @@ for filename in modified_files:
     try:
         with open(filename, 'r') as fh:
             tags = get_tags(fh)
-            if(len(tags)) > 0:
+            if tags:
                 for tag in list_directory("gen/tags/"):
                     try:
                         with open(tag, 'r+') as tag_file:
@@ -288,7 +290,7 @@ for filename in deleted_files:
     try:
         with open(filename, 'r') as fh:
             tags = get_tags(fh)
-            if len(tags) > 0:
+            if tags:
                 for tag in tags:
                     try:
                         with open("gen/tags/"+tag+".tmp", 'r+') as tag_file:
@@ -555,9 +557,8 @@ rss += "<channel><atom:link href=\""+params["BLOG_URL"]+"rss.xml\" rel=\"self\" 
 rss += "<description>"+params["DESCRIPTION"]+"</description><language>"+params["LANGUAGE"]+"</language><copyright>"+params["COPYRIGHT"]+"</copyright>"
 rss += "<webMaster>"+params["WEBMASTER"]+"</webMaster><lastBuildDate>"+strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())+"</lastBuildDate>"
 
-del date, title
-
 for article in last_articles_index:
+    del date, title
     try:
         with open(article, "r") as article_fh:
             tags = get_tags(article_fh)
