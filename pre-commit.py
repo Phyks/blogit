@@ -3,6 +3,7 @@
 #TODO : gitignore
 
 import sys
+import getopt
 import shutil
 import os
 import datetime
@@ -73,12 +74,24 @@ def auto_dir(path):
         sys.exit("[ERROR] An error occured while creating "+path+" file \
           and parent dirs.")
 
-#Find the changes to be committed
 try:
-    #TODO : Check this command
-    changes = subprocess.check_output(["git", "diff", "--cached", "--name-status"], universal_newlines=True)
-except:
-    sys.exit("[ERROR] An error occured when running git diff.")
+	opts, args = getopt.gnu_getopt(sys.argv, "hf", ["help", "force-regen"])
+except getopt.GetoptError:
+	sys.exit("Error while parsing command line arguments. See pre-commit -h for more infos on how to use.")
+
+for opt, arg in opts:
+	if opt in ("-h", "--help"):
+		print("Usage :")
+		print("This should be called automatically as a git hook when commiting. You can also launch it manually.\n")
+		print("This script generates static pages ready to be served behind your webserver.\n")
+		print("Usage :")
+		print("-h \t --help \t displays this help message.")
+		print("-f \t --force-regen \t force the regeneration of all the pages.")
+		sys.exit(0)
+	elif opt in ("-f", "--force-regen"):
+		force_regen = True
+	else:
+		force_regen = False
 
 #Set parameters
 with open("raw/params", "r") as params_fh:
@@ -94,19 +107,34 @@ modified_files = []
 deleted_files = []
 added_files = []
 
-changes = changes.strip().split("\n")
-if changes == [""]:
-    sys.exit("[ERROR] Nothing to do...")
+if not force_regen:
+	#Find the changes to be committed
+	try:
+		#TODO : Check this command
+		changes = subprocess.check_output(["git", "diff", "--cached", "--name-status"], universal_newlines=True)
+	except:
+		sys.exit("[ERROR] An error occured when running git diff.")
 
-for changed_file in changes:
-    if changed_file[0] == "A":
-        added_files.append(changed_file[changed_file.index("\t")+1:])
-    elif changed_file[0] == "M":
-        modified_files.append(changed_file[changed_file.index("\t")+1:])
-    elif changed_file[0] == "D":
-        deleted_files.append(changed_file[changed_file.index("\t")+1:])
-    else:
-        sys.exit("[ERROR] An error occured when running git diff.")
+	changes = changes.strip().split("\n")
+	if changes == [""]:
+		sys.exit("[ERROR] Nothing to do...")
+
+	for changed_file in changes:
+		if changed_file[0] == "A":
+			added_files.append(changed_file[changed_file.index("\t")+1:])
+		elif changed_file[0] == "M":
+			modified_files.append(changed_file[changed_file.index("\t")+1:])
+		elif changed_file[0] == "D":
+			deleted_files.append(changed_file[changed_file.index("\t")+1:])
+		else:
+			sys.exit("[ERROR] An error occured when running git diff.")
+else:
+	shutil.rmtree("blog/")
+	shutil.rmtree("gen/")
+	added_files = list_directory("raw")
+
+if len(added_files) == 0 and len(modified_files) == 0 and len(deleted_files) == 0:
+	sys.exit("[ERROR] Nothing to do...")
 
 #Only keep modified raw articles files
 for filename in list(added_files):
