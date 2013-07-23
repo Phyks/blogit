@@ -1,7 +1,7 @@
 Blogit
 ======
 
-A git based blogging software. Just as Jekyll and so, it takes your articles as html files and computes them to generate static page and RSS feed to serve behind a webserver. It uses git as a backend file manager (as git provide some useful features like history and hooks) and Python for scripting the conversion process. You can customize the python scripts to handle special tags (ie, not standard HTML tags) just as <code> for example. See params file in raw dir to modify this.
+A git based blogging software. Just as Jekyll and so, it takes your articles as html files and computes them to generate static page and RSS feed to serve behind a webserver. It uses git as a backend file manager (as git provide some useful features like history and hooks) and Python for scripting the conversion process. You can customize the python scripts to handle special tags (ie, not standard HTML tags) just as &lt;code&gt; for example. See params file in raw dir to modify this.
 
 This project is still a WIP.
 
@@ -38,7 +38,7 @@ Example of syntax for an article
 
 LICENSE
 =======
-/*
+
 * --------------------------------------------------------------------------------
 * "THE NO-ALCOHOL BEER-WARE LICENSE" (Revision 42):
 * Phyks (webmaster@phyks.me) wrote this file. As long as you retain this notice you
@@ -48,4 +48,3 @@ LICENSE
 * return.
 *																		Phyks
 * ---------------------------------------------------------------------------------
-*/
