@@ -8,6 +8,7 @@ import shutil
 import os
 import datetime
 import subprocess
+import re
 
 from time import gmtime, strftime, mktime
 
@@ -75,6 +76,12 @@ def auto_dir(path):
         sys.exit("[ERROR] An error occured while creating "+path+" file \
           and parent dirs.")
 
+
+def replace_tags(article, search_list, replace_list):
+    for search, replace in zip(search_list, replace_list):
+        re.sub(search, replace, article)
+
+
 try:
     opts, args = getopt.gnu_getopt(sys.argv, "hf", ["help", "force-regen"])
 except getopt.GetoptError:
@@ -94,13 +101,20 @@ for opt, arg in opts:
         force_regen = True
 
 #Set parameters
+search_list = []
+replace_list = []
 with open("raw/params", "r") as params_fh:
     params = {}
     for line in params_fh.readlines():
         if line.strip() == "" or line.strip()[0] == "#":
             continue
         option, value = line.split("=", 1)
-        params[option.strip()] = value.strip()
+        if option == "SEARCH":
+            search_list = value.strip().split(",")
+        elif option == "REPLACE":
+            replace_list = value.strip().split(",")
+        else:
+            params[option.strip()] = value.strip()
 
 #Fill lists for modified, deleted and added files
 modified_files = []
@@ -336,6 +350,7 @@ for filename in added_files+modified_files:
 
             fh.seek(0)
             article = fh.read()
+            article = replace_tags(article, search_list, replace_list)
             date = "Le "+date[0:2]+"/"+date[2:4]+"/"+date[4:8]+" à "+date[9:11]+":"+date[11:13]
 
             try:
@@ -422,7 +437,7 @@ try:
                 index = header_gen_fh.read()
             for article in last_articles_index:
                 with open(article, "r") as article_fh:
-                    index += article_fh.read()
+                    index += replace_tags(article_fh.read(), search_list, replace_list)
             with open("gen/footer.gen") as footer_gen_fh:
                 index += footer_gen_fh.read()
 
@@ -447,7 +462,7 @@ for tag in list_directory("gen/tags"):
                 for line in tag_gen_fh_lines:
                     line = line.replace(".html", ".gen")
                     with open("gen/"+line.strip(), "r") as article_handler:
-                        tag_content += article_handler.read()
+                        tag_content += replace_tags(article_handler.read(), search_list, replace_list)
                 with open("gen/footer.gen", "r") as footer_handler:
                     tag_content += footer_handler.read()
             tag_fh.write(tag_content)
@@ -457,6 +472,7 @@ for tag in list_directory("gen/tags"):
 
 #Finish articles pages generation
 for filename in added_files+modified_files:
+
     try:
         auto_dir("blog/"+filename[4:])
         with open("blog/"+filename[4:], "w") as article_fh:
@@ -472,7 +488,7 @@ for filename in added_files+modified_files:
                 article_gen_fh.seek(0)
 
                 article = article.replace("@titre", params["BLOG_TITLE"]+" - "+title, 1)
-                article += article_gen_fh.read()
+                article += replace_tags(article_gen_fh.read(), search_list, replace_list)
             with open("gen/footer.gen", "r") as footer_gen_fh:
                 article += footer_gen_fh.read()
             article_fh.write(article)
@@ -512,7 +528,7 @@ for i in years_list:
         for article in articles_list:
             try:
                 with open(article, "r") as article_fh:
-                    article_content = article_fh.read()
+                    article_content = replace_tags(article_fh.read(), search_list, replace_list)
                     page_month += article_content
                     page_year += article_content
             except IOError:
@@ -570,7 +586,7 @@ for article in last_articles_index:
                         <title>"+title+"</title> \
                         <link>"+params["BLOG_URL"]+article[5:]+"</link> \
                         <guid isPermaLink=\"false\">"+params["BLOG_URL"]+article[5:]+"</guid> \
-                        <description><![CDATA["+article_fh.read()+"]]></description> \
+                        <description><![CDATA["+replace_tags(article_fh.read(), search_list, replace_list)+"]]></description> \
                         <pubDate>"+date+"</pubDate> \
                         <category>"+', '.join(tags)+"</category> \
                         <author>"+params["WEBMASTER"]+"</author> \

@@ -1,2 +1,15 @@
-BLOG_TITLE = "Phyks' blog"
+BLOG_TITLE = Phyks' blog
 NB_ARTICLES_INDEX = 20
+BLOG_URL = file:///home/lucas/Blog/git/blog/
+
+#RSS params
+WEBMASTER = webmaster@phyks.me (Phyks)
+LANGUAGE = fr
+DESCRIPTION = 
+COPYRIGHT = 
+
+#Personal replacements
+#Items are passed as arguments to a python regex,
+#Take care to match the format
+#SEARCH = "item1", "item2"
+#REPLACE = "item1_bis", "item2_bis"
