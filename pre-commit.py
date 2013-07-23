@@ -75,23 +75,22 @@ def auto_dir(path):
           and parent dirs.")
 
 try:
-	opts, args = getopt.gnu_getopt(sys.argv, "hf", ["help", "force-regen"])
+    opts, args = getopt.gnu_getopt(sys.argv, "hf", ["help", "force-regen"])
 except getopt.GetoptError:
-	sys.exit("Error while parsing command line arguments. See pre-commit -h for more infos on how to use.")
+    sys.exit("Error while parsing command line arguments. See pre-commit -h for more infos on how to use.")
 
+force_regen = False
 for opt, arg in opts:
-	if opt in ("-h", "--help"):
-		print("Usage :")
-		print("This should be called automatically as a git hook when commiting. You can also launch it manually.\n")
-		print("This script generates static pages ready to be served behind your webserver.\n")
-		print("Usage :")
-		print("-h \t --help \t displays this help message.")
-		print("-f \t --force-regen \t force the regeneration of all the pages.")
-		sys.exit(0)
-	elif opt in ("-f", "--force-regen"):
-		force_regen = True
-	else:
-		force_regen = False
+    if opt in ("-h", "--help"):
+        print("Usage :")
+        print("This should be called automatically as a git hook when commiting. You can also launch it manually.\n")
+        print("This script generates static pages ready to be served behind your webserver.\n")
+        print("Usage :")
+        print("-h \t --help \t displays this help message.")
+        print("-f \t --force-regen \t force the regeneration of all the pages.")
+        sys.exit(0)
+    elif opt in ("-f", "--force-regen"):
+        force_regen = True
 
 #Set parameters
 with open("raw/params", "r") as params_fh:
@@ -108,33 +107,33 @@ deleted_files = []
 added_files = []
 
 if not force_regen:
-	#Find the changes to be committed
-	try:
-		#TODO : Check this command
-		changes = subprocess.check_output(["git", "diff", "--cached", "--name-status"], universal_newlines=True)
-	except:
-		sys.exit("[ERROR] An error occured when running git diff.")
+    #Find the changes to be committed
+    try:
+        #TODO : Check this command
+        changes = subprocess.check_output(["git", "diff", "--cached", "--name-status"], universal_newlines=True)
+    except:
+        sys.exit("[ERROR] An error occured when running git diff.")
 
-	changes = changes.strip().split("\n")
-	if changes == [""]:
-		sys.exit("[ERROR] Nothing to do...")
+    changes = changes.strip().split("\n")
+    if changes == [""]:
+        sys.exit("[ERROR] Nothing to do...")
 
-	for changed_file in changes:
-		if changed_file[0] == "A":
-			added_files.append(changed_file[changed_file.index("\t")+1:])
-		elif changed_file[0] == "M":
-			modified_files.append(changed_file[changed_file.index("\t")+1:])
-		elif changed_file[0] == "D":
-			deleted_files.append(changed_file[changed_file.index("\t")+1:])
-		else:
-			sys.exit("[ERROR] An error occured when running git diff.")
+    for changed_file in changes:
+        if changed_file[0] == "A":
+            added_files.append(changed_file[changed_file.index("\t")+1:])
+        elif changed_file[0] == "M":
+            modified_files.append(changed_file[changed_file.index("\t")+1:])
+        elif changed_file[0] == "D":
+            deleted_files.append(changed_file[changed_file.index("\t")+1:])
+        else:
+            sys.exit("[ERROR] An error occured when running git diff.")
 else:
-	shutil.rmtree("blog/")
-	shutil.rmtree("gen/")
-	added_files = list_directory("raw")
+    shutil.rmtree("blog/")
+    shutil.rmtree("gen/")
+    added_files = list_directory("raw")
 
 if len(added_files) == 0 and len(modified_files) == 0 and len(deleted_files) == 0:
-	sys.exit("[ERROR] Nothing to do...")
+    sys.exit("[ERROR] Nothing to do...")
 
 #Only keep modified raw articles files
 for filename in list(added_files):
@@ -487,7 +486,9 @@ with open("gen/header.gen", "r") as header_gen_fh:
 with open("gen/footer.gen", "r") as footer_gen_fh:
     footer_gen = footer_gen_fh.read()
 
-for i in os.listdir("blog/"):
+years_list = os.listdir("blog/")
+years_list.sort(reverse=True)
+for i in years_list:
     try:
         int(i)
     except ValueError:
@@ -496,18 +497,23 @@ for i in os.listdir("blog/"):
     #Generate page per year 
     page_year = header_gen.replace("@titre", params["BLOG_TITLE"]+" - "+i, 1)
 
-    for j in os.listdir("blog/"+i):
-        if not os.path.isdir(j):
+    months_list = os.listdir("blog/"+i)
+    months_list.sort(reverse=True)
+    for j in months_list:
+        if not os.path.isdir("blog/"+i+"/"+j):
             continue
 
         #Generate pages per month
         page_month = header_gen.replace("@titre", params["BLOG_TITLE"]+" - "+i+"/"+j, 1)
 
-        for article in list_directory("gen/"+i+"/"+j):  # TODO : Sort by date
+        articles_list = list_directory("gen/"+i+"/"+j)
+        articles_list.sort(key=lambda x: os.stat(x).st_mtime, reverse=True)
+        for article in  articles_list:
             try:
                 with open(article, "r") as article_fh:
-                    page_month += article_fh.read()
-                    page_year += article_fh.read()
+                    article_content = article_fh.read()
+                    page_month += article_content
+                    page_year += article_content
             except IOError:
                 sys.exit("[ERROR] Error while generating years and months pages. Check your gen folder, you may need to regenerate some articles. The error was due to "+article+".")
 
