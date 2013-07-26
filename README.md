@@ -38,6 +38,9 @@ Example of syntax for an article
 
 LICENSE
 =======
+TLDR; I don't give a damn to anything you can do using this code. It would just be nice to
+quote where the original code comes from.
+
 
 * --------------------------------------------------------------------------------
 * "THE NO-ALCOHOL BEER-WARE LICENSE" (Revision 42):
