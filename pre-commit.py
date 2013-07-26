@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-#TODO : gitignore
-
 import sys
 import getopt
 import shutil
@@ -126,7 +124,6 @@ added_files = []
 if not force_regen:
     #Find the changes to be committed
     try:
-        #TODO : Check this command
         changes = subprocess.check_output(["git", "diff", "--cached", "--name-status"], universal_newlines=True)
     except:
         sys.exit("[ERROR] An error occured when running git diff.")
@@ -229,7 +226,6 @@ print("[INFO] Modified files : "+", ".join(modified_files))
 print("[INFO] Deleted filed : "+", ".join(deleted_files))
 
 print("[INFO] Updating tags for added and modified files")
-#TODO : refactor since there
 for filename in added_files:
     try:
         with open(filename, 'r') as fh:
@@ -420,7 +416,7 @@ except IOError:
     sys.exit("[ERROR] Unable to copy the footer.html file.")
 
 #Copy CSS files
-if not os.path.isfile("raw/css") or list_directory("raw/css") == []:
+if not os.path.isdir("raw/css") or list_directory("raw/css") == []:
     print("[INFO] (CSS) No CSS files in raw/css folder")
 else:
     try:
