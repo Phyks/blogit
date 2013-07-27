@@ -637,14 +637,7 @@ for filename in added_files+modified_files:
         sys.exit("[ERROR] An error occurred while generating article " +
                  filename[4:]+" page.")
 
-#======================================
-# Generate pages for each year and month
-with open("gen/header.gen", "r") as header_gen_fh:
-    header_gen = header_gen_fh.read()
-
-with open("gen/footer.gen", "r") as footer_gen_fh:
-    footer_gen = footer_gen_fh.read()
-
+# Regenerate page for years / months
 years_list = os.listdir("blog/")
 years_list.sort(reverse=True)
 for i in years_list:
@@ -654,7 +647,7 @@ for i in years_list:
         continue
 
     # Generate page per year
-    page_year = header_gen.replace("@title", params["BLOG_TITLE"]+" - "+i, 1)
+    page_year = header.replace("@title", params["BLOG_TITLE"]+" - "+i, 1)
 
     months_list = os.listdir("blog/"+i)
     months_list.sort(reverse=True)
@@ -663,7 +656,7 @@ for i in years_list:
             continue
 
         # Generate pages per month
-        page_month = header_gen.replace("@title", params["BLOG_TITLE"]+" - "+i+"/"+j, 1)
+        page_month = header.replace("@title", params["BLOG_TITLE"]+" - "+i+"/"+j, 1)
 
         articles_list = list_directory("gen/"+i+"/"+j)
         articles_list.sort(key=lambda x: os.stat(x).st_mtime, reverse=True)
@@ -676,14 +669,14 @@ for i in years_list:
             except IOError:
                 sys.exit("[ERROR] Error while generating years and months pages. Check your gen folder, you may need to regenerate some articles. The error was due to "+article+".")
 
-        page_month += footer_gen
+        page_month += footer
         try:
             with open("blog/"+i+"/"+j+"/index.html", "w") as page_month_fh:
                 page_month_fh.write(page_month)
         except IOError:
             sys.exit("[ERROR] Unable to write index file for "+i+"/"+j+".")
 
-    page_year += footer_gen
+    page_year += footer
     try:
         with open("blog/"+i+"/index.html", "w") as page_year_fh:
             page_year_fh.write(page_year)
