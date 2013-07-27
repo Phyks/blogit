@@ -4,6 +4,7 @@
 # TODO : Test the whole thing
 # TODO : What happens when I run it as a hook ?
 # TODO : What happens when I commit with -a option ?
+# TODO : git ls-files
 
 import sys
 import getopt
@@ -466,7 +467,7 @@ for filename in added_files+modified_files:
                                "\t<div class=\"article\">\n"
                                "\t\t<h1>"+title+"</h1>\n"
                                "\t\t"+article+"\n"
-                               "\t\t<p class=\"date\">"+date+"</p>\n"
+                               "\t\t<p class=\"date\">"+date_readable+"</p>\n"
                                "\t</div>\n")
             print("[INFO] (GEN ARTICLES) Article "+filename[4:]+" generated")
     except IOError:
@@ -509,7 +510,7 @@ rss += ("\t<channel>"
 
 
 # Generate header (except title) + index file + rss file
-for i, article in enumerate(last_articles):
+for i, article in enumerate(["gen/"+x[4:-5]+".gen" for x in last_articles]):
     content, title, tags, date, author = "", "", "", "", ""
     try:
         with open(article, "r") as fh:
@@ -536,14 +537,10 @@ for i, article in enumerate(last_articles):
     if i < 5:
         articles_header += "<li>"
         articles_header += ("<a href=\""+params["BLOG_URL"] +
-                            article[4:-4]+".html\">"+title+"</a>")
+                            article[4:-5]+".html\">"+title+"</a>")
         articles_header += "</li>"
 
-    articles_index += "<li>"
-    articles_index += ("<a href=\""+params["BLOG_URL"] +
-                       article[4:-4]+".html\">"+title+"</a>")
-    articles_index += "</li>"
-
+    articles_index += content
     date_rss = strftime("%a, %d %b %Y %H:%M:%S +0000",
                         gmtime(mktime(datetime.datetime.strptime(date,
                                                                  "%d%m%Y-%H%M")
