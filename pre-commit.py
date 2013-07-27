@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-# TODO : Replace \ for line-breaking ?
 # TODO : Orthographe dans les messages d'erreur
 # TODO : What happens when a file is moved with git ?
 # TODO : Test the whole thing
@@ -85,7 +84,7 @@ def auto_dir(path):
         if not os.path.exists(directory):
             os.makedirs(directory)
     except IOError:
-        sys.exit("[ERROR] An error occured while creating "+path+" file "
+        sys.exit("[ERROR] An error occurred while creating "+path+" file "
                  "and parent dirs.")
 
 
@@ -100,7 +99,7 @@ def replace_tags(article, search_list, replace_list):
 try:
     opts, args = getopt.gnu_getopt(sys.argv, "hf", ["help", "force-regen"])
 except getopt.GetoptError:
-    sys.exit("Error while parsing command line arguments. "
+    sys.exit("[ERROR] Unable to parse command line arguments. "
              "See pre-commit -h for more infos on how to use.")
 
 force_regen = False
@@ -135,6 +134,8 @@ try:
                 replace_list = value.strip().split(",")
             else:
                 params[option.strip()] = value.strip()
+
+    print("[INFO] Parameters set from raw/params file.")
 except IOError:
     sys.exit("[ERROR] Unable to load raw/params file which defines important "
              "parameters. Does such a file exist ? See doc for more info "
@@ -151,12 +152,12 @@ if not force_regen:
     try:
         changes = subprocess.check_output(["git", "diff", "--cached", "--name-status"], universal_newlines=True)
     except:
-        sys.exit("[ERROR] An error occured when fetching file changes "
+        sys.exit("[ERROR] An error occurred when fetching file changes "
                  "from git.")
 
     changes = changes.strip().split("\n")
     if changes == [""]:
-        sys.exit("[ERROR] Nothing to do... Did you had new files with "
+        sys.exit("[ERROR] Nothing to do... Did you add new files with "
                  "\"git add\" before ?")
 
     for changed_file in changes:
@@ -167,14 +168,14 @@ if not force_regen:
         elif changed_file[0].startswith("D"):
             deleted_files.append(changed_file[changed_file.index("\t")+1:])
         else:
-            sys.exit("[ERROR] An error occured when running git diff.")
+            sys.exit("[ERROR] An error occurred when running git diff.")
 else:
     shutil.rmtree("blog/")
     shutil.rmtree("gen/")
     added_files = list_directory("raw")
 
 if not added_files and not modified_files and not deleted_files:
-    sys.exit("[ERROR] Nothing to do... Did you had new files with "
+    sys.exit("[ERROR] Nothing to do... Did you add new files with "
              "\"git add\" before ?")
 
 # Only keep modified raw articles files
@@ -193,7 +194,7 @@ for filename in list(added_files):
     if ((not filename.endswith(".html") and not filename.endswith(".ignore"))
        or direct_copy):
         # Note : this deal with CSS, images or footer file
-        print("[INFO] (Not HTML file) Copying directly not html file "
+        print("[INFO] (Direct copy) Copying directly the file "
               + filename[4:]+" to blog dir.")
 
         auto_dir("blog/"+filename[4:])
@@ -221,8 +222,8 @@ for filename in list(modified_files):
 
     if ((not filename.endswith("html") and not filename.endswith("ignore"))
        or direct_copy):
-        print("[INFO] (Not HTML file) Updating directly not html file "
-              + filename[4:]+" to blog dir.")
+        print("[INFO] (Direct copy) Updating directly the file "
+              + filename[4:]+" in blog dir.")
         auto_dir("blog/"+filename[4:])
         shutil.copy(filename, "blog/"+filename[4:])
         modified_files.remove(filename)
@@ -244,29 +245,22 @@ for filename in list(deleted_files):
     try:
         int(filename[4:6])
     except ValueError:
-        direct_copy = True
+        direct_delete = True
+        continue
 
     if ((not filename.endswith("html") and not filename.endswith("ignore"))
-       or direct_copy):
-        print("[INFO] (Not HTML file) Copying directly not html file "
-              + filename[4:]+" to blog dir.")
-        auto_dir("blog/"+filename[4:])
-        shutil.copy(filename, "blog/"+filename[4:])
+       or direct_delete):
+        print("[INFO] (Deleted file) Delete directly copied file "
+              + filename[4:]+" in blog dir.")
+        os.unlink(filename)
         deleted_files.remove(filename)
         continue
-
-    if filename.endswith("ignore"):
-        print("[INFO] (Not published) Found not published article "
-              + filename[4:-7]+".")
-        added_files.remove(filename)
-        continue
-
 
 print("[INFO] Added files : "+", ".join(added_files))
 print("[INFO] Modified files : "+", ".join(modified_files))
 print("[INFO] Deleted filed : "+", ".join(deleted_files))
 
-print("[INFO] Updating tags for added and modified files")
+print("[INFO] Updating tags for added and modified files.")
 for filename in added_files:
     try:
         with open(filename, 'r') as fh:
@@ -288,14 +282,14 @@ for filename in added_files:
                       + filename[4:])
         except IOError:
             sys.exit("[ERROR] (TAGS) New tag found but an error "
-                     "occured in article "+filename[4:]+": "+tag+".")
+                     "occurred in article "+filename[4:]+": "+tag+".")
 
 for filename in modified_files:
     try:
         with open(filename, 'r') as fh:
             tags = get_tags(fh)
     except IOError:
-        sys.exit("[ERROR] Unable to open file "+filename+".")
+        sys.exit("[ERROR] Unable to open file "+filename[4:]+".")
 
     if not tags:
         sys.exit("[ERROR] (TAGS) In modified article "+filename[4:]+" : "
@@ -308,17 +302,17 @@ for filename in modified_files:
                    and filename[4:] not in tag_file.read()):
                     tag_file.seek(0, 2)  # Append to end of file
                     tag_file.write(filename[4:]+"\n")
-                    print("[INFO] (TAGS) Found new tag "+tag[:tag.index(".tmp")]+" for modified article "+filename[4:])
+                    print("[INFO] (TAGS) Found new tag "+tag[:tag.index(".tmp")]+" for modified article "+filename[4:]+".")
                     tags.remove(tag_file[9:])
                 if (tag[tag.index("tags/") + 5:tag.index(".tmp")] not in tags
                    and filename[4:] in tag_file.read()):
                     tag_file_old_content = tag_file.read()
                     tag_file.truncate()
                     tag_file.write(tag_file_old_content.replace(filename[4:]+"\n", ""))
-                    print("[INFO] (TAGS) Deleted tag "+tag[:tag.index(".tmp")]+" in modified article "+filename[4:])
+                    print("[INFO] (TAGS) Deleted tag "+tag[:tag.index(".tmp")]+" in modified article "+filename[4:]+".")
                     tags.remove(tag_file[9:])
         except IOError:
-            sys.exit("[ERROR] (TAGS) An error occured when parsing tags "
+            sys.exit("[ERROR] (TAGS) An error occurred when parsing tags "
                      " of article "+filename[4:]+".")
 
     for tag in tags:  # New tags created
@@ -327,9 +321,9 @@ for filename in modified_files:
             with open("gen/tags/"+tag+".tmp", "a+") as tag_file:  # Delete tag file here if empty after deletion
                 tag_file.write(filename[4:]+"\n")
                 print("[INFO] (TAGS) Found new tag "+tag+" for "
-                      "modified article "+filename[4:])
+                      "modified article "+filename[4:]+".")
         except IOError:
-            sys.exit("[ERROR] (TAGS) An error occured when parsing tags "
+            sys.exit("[ERROR] (TAGS) An error occurred when parsing tags "
                      "of article "+filename[4:]+".")
 
 # Delete tags for deleted files and delete all generated files
@@ -341,7 +335,7 @@ for filename in deleted_files:
         sys.exit("[ERROR] Unable to open file "+filename+".")
 
     if not tags:
-        sys.exit("[ERROR] (TAGS) In deleted article "+filename[4:]+" : "
+        sys.exit("[ERROR] In deleted article "+filename[4:]+" : "
                  "No tags found !")
 
     for tag in tags:
@@ -354,7 +348,7 @@ for filename in deleted_files:
                 if tag_file_write:
                     tag_file.write(tag_file_write)
         except IOError:
-            sys.exit("[ERROR] An error occured while deleting article" +
+            sys.exit("[ERROR] An error occurred while deleting article" +
                      filename[4:]+" from tags files.")
 
         if not tag_file_write:
@@ -362,17 +356,17 @@ for filename in deleted_files:
                 os.unlink(tag)
                 print("[INFO] (TAGS) No more article with tag "+tag[8:-4]+", deleting it.")
             except FileNotFoundError:
-                print("[INFO] "+tag+" was found to be empty but there was an error during deletion. You should check manually.")
+                print("[INFO] (TAGS) "+tag+" was found to be empty but there was an error during deletion. You should check manually.")
 
     # Delete generated files
     try:
         os.unlink("gen/"+filename[4:-5]+".gen")
         os.unlink("blog/"+filename[4:])
     except FileNotFoundError:
-        print("[INFO] Article "+filename[4:]+" seems to not have already been "
+        print("[INFO] (DELETION) Article "+filename[4:]+" seems to not have already been "
               "generated. You should check manually.")
 
-    print("[INFO] Deleted article "+filename[4:]+" in both gen and blog "
+    print("[INFO] (DELETION) Deleted article "+filename[4:]+" in both gen and blog "
           "directories")
 
 
@@ -400,7 +394,7 @@ for filename in added_files+modified_files:
                     tags = line[line.find("@tags=")+6:].strip()
                     continue
     except IOError:
-        print("[ERROR] An error occurred while generating article "+filename[4:])
+        print("[ERROR] An error occurred while generating article "+filename[4:]+".")
 
     if not isset("tags") or not isset("title") or not isset("author"):
         sys.exit("[ERROR] Missing parameters (title, author, date, tags) in article "+filename[4:]+".")
@@ -413,9 +407,9 @@ for filename in added_files+modified_files:
         auto_dir("gen/"+filename[4:-5]+".gen")
         with open("gen/"+filename[4:-5]+".gen", 'w') as article_file:
             article_file.write("<article><nav class=\"aside_article\"></nav><div class=\"article\"><h1>"+title+"</h1>"+article+"<p class=\"date\">"+date+"</p></div>\n")
-            print("[GEN ARTICLES] Article "+filename[4:]+" generated")
+            print("[INFO] (GEN ARTICLES) Article "+filename[4:]+" generated")
     except IOError:
-        sys.exit("[ERROR] An error occured when writing generated HTML for article "+filename[4:]+".")
+        sys.exit("[ERROR] An error occurred when writing generated HTML for article "+filename[4:]+".")
 
 # Starting to generate header file (except title)
 tags_header = "<ul>"
@@ -463,7 +457,7 @@ try:
         header_gen_fh.write(header)
         print("[INFO] (HEADER) Header has been generated successfully.")
 except FileNotFoundError:
-    sys.exit("[ERROR] (HEADER) An error occured while writing header file.")
+    sys.exit("[ERROR] An error occurred while writing header file.")
 except IOError:
     sys.exit("[ERROR] Unable to open gen/header.gen for writing.")
 
@@ -472,7 +466,7 @@ try:
     with open("raw/footer.html", "r") as footer_fh:
         footer = footer_fh.read()
 except IOError:
-    sys.exit("[ERROR] An error occured while parsing footer file raw/footer.html.")
+    sys.exit("[ERROR] An error occurred while parsing footer file raw/footer.html.")
 
 # Finishing index gen
 articles_index += "</ul>"
@@ -504,7 +498,7 @@ for tag in tags_full_list:
             tag_fh.write(tag_content)
             print("[INFO] (TAGS) Tag page for "+tag[9:-4]+" has been generated successfully.")
     except IOError:
-        sys.exit("[ERROR] An error occured while generating tag page \""+tag[9:-4]+"\"")
+        sys.exit("[ERROR] An error occurred while generating tag page \""+tag[9:-4]+"\"")
 
 # Finish articles pages generation
 for filename in added_files+modified_files:
@@ -529,7 +523,7 @@ for filename in added_files+modified_files:
             article_fh.write(article)
             print("[INFO] (ARTICLES) Article page for "+filename[4:]+" has been generated successfully.")
     except IOError:
-        sys.exit("[ERROR] An error occured while generating article "+filename[4:]+" page.")
+        sys.exit("[ERROR] An error occurred while generating article "+filename[4:]+" page.")
 
 #======================================
 # Generate pages for each year and month
@@ -635,4 +629,4 @@ try:
     with open("blog/rss.xml", "w") as rss_fh:
         rss_fh.write(rss)
 except IOError:
-    sys.exit("[ERROR] An error occured while writing RSS file.")
+    sys.exit("[ERROR] An error occurred while writing RSS file.")
