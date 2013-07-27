@@ -191,13 +191,15 @@ for filename in list(added_files):
 
     try:
         int(filename[4:8])
-        years_list.append(filename[4:8])
+        if filename[4:8] not in years_list:
+            years_list.append(filename[4:8])
     except ValueError:
         direct_copy = True
 
     try:
-        int(filename[8:10])
-        months_list.append(filename[8:10])
+        int(filename[9:11])
+        if filename[9:11] not in months_list:
+            months_list.append(filename[9:11])
     except ValueError:
         pass
 
@@ -226,13 +228,15 @@ for filename in list(modified_files):
         continue
     try:
         int(filename[4:8])
-        years_list.append(filename[4:8])
+        if filename[4:8] not in years_list:
+            years_list.append(filename[4:8])
     except ValueError:
         direct_copy = True
 
     try:
-        int(filename[8:10])
-        months_list.append(filename[8:10])
+        int(filename[9:11])
+        if filename[9:11] not in months_list:
+            months_list.append(filename[9:11])
     except ValueError:
         pass
 
@@ -260,13 +264,15 @@ for filename in list(deleted_files):
 
     try:
         int(filename[4:8])
-        years_list.append(filename[4:8])
+        if filename[4:8] not in years_list:
+            years_list.append(filename[4:8])
     except ValueError:
         direct_delete = True
 
     try:
-        int(filename[8:10])
-        months_list.append(filename[8:10])
+        int(filename[9:11])
+        if filename[9:11] not in months_list:
+            months_list.append(filename[9:11])
     except ValueError:
         pass
 
@@ -423,7 +429,7 @@ for filename in deleted_files:
 last_articles = latest_articles("raw/", int(params["NB_ARTICLES_INDEX"]))
 tags_full_list = list_directory("gen/tags")
 
-# Generate html for each article
+# Generate html for each article (gen/ dir)
 for filename in added_files+modified_files:
     try:
         with open(filename, 'r') as fh:
@@ -464,7 +470,8 @@ for filename in added_files+modified_files:
                                "\t\t<h1>"+title+"</h1>\n"
                                "\t\t"+article+"\n"
                                "\t\t<p class=\"date\">"+date_readable+"</p>\n"
-                               "\t</div>\n")
+                               "\t</div>\n"
+                               "</article>\n")
             print("[INFO] (GEN ARTICLES) Article "+filename[4:]+" generated")
     except IOError:
         sys.exit("[ERROR] An error occurred when writing generated HTML for "
@@ -487,7 +494,7 @@ except IOError:
 header = header.replace("@tags", tags_header, 1)
 header = header.replace("@blog_url", params["BLOG_URL"], 1)
 articles_header = "<ul>"
-articles_index = "<ul>"
+articles_index = ""
 
 rss = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
        "<rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\" "
@@ -579,7 +586,6 @@ except IOError:
              "file raw/footer.html.")
 
 # Finishing index gen
-articles_index += "</ul>"
 index = (header.replace("@title", params["BLOG_TITLE"], 1) +
          articles_index + footer)
 
@@ -623,7 +629,32 @@ for tag in tags_full_list:
         sys.exit("[ERROR] An error occurred while generating tag page \"" +
                  tag[9:-4]+"\"")
 
-# Regenerate page for years / months
+# Finish generating HTML for articles (blog/ dir)
+for article in added_files+modified_files:
+    try:
+        with open("gen/"+article[4:-5]+".gen", "r") as article_fh:
+            content = article_fh.read()
+    except IOError:
+        sys.exit("[ERROR] An error occurred while opening"
+                 "gen/"+article[4:-5]+".gen file.")
+
+    for line in content.split("\n"):
+        if "@title=" in line:
+            title = line[line.find("@title=")+7:].strip()
+            break
+
+    content = header.replace("@title", params["BLOG_TITLE"] + " - " +
+                             title, 1) + content + footer
+    try:
+        auto_dir("blog/"+article[4:])
+        with open("blog/"+article[4:], "w") as article_fh:
+            article_fh.write(content)
+            print("[INFO] (GEN ARTICLES) HTML file generated in blog dir for"
+                  "article "+article[4:]+".")
+    except IOError:
+        sys.exit("[ERROR] Unable to write blog/"+article[4:]+" file.")
+
+# Regenerate pages for years / months
 years_list.sort(reverse=True)
 for i in years_list:
     try:
@@ -631,7 +662,7 @@ for i in years_list:
     except ValueError:
         continue
 
-    # Generate page per year
+    # Generate pages per year
     page_year = header.replace("@title", params["BLOG_TITLE"]+" - "+i, 1)
 
     months_list.sort(reverse=True)
