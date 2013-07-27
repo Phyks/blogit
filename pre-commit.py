@@ -430,7 +430,7 @@ tags_full_list = list_directory("gen/tags")
 for filename in added_files+modified_files:
     try:
         with open(filename, 'r') as fh:
-            article = "", "", "", "", ""
+            article, title, date, author, tags = "", "", "", "", ""
             for line in fh.readlines():
                 article += line
                 if "@title=" in line:
@@ -629,36 +629,6 @@ for tag in tags_full_list:
     except IOError:
         sys.exit("[ERROR] An error occurred while generating tag page \"" +
                  tag[9:-4]+"\"")
-
-# Finish articles pages generation
-for filename in added_files+modified_files:
-    try:
-        auto_dir("blog/"+filename[4:])
-        with open("blog/"+filename[4:], "w") as article_fh:
-            with open("gen/header.gen", "r") as header_gen_fh:
-                article = header_gen_fh.read()
-            with open("gen/"+filename[4:-5]+".gen", "r") as article_gen_fh:
-                line = article_gen_fh.readline()
-                while "@title" not in line:
-                    line = article_gen_fh.readline()
-                line = line.strip()
-                title_pos = line.find("@title=")
-                title = line[title_pos+7:]
-                article_gen_fh.seek(0)
-
-                article = article.replace("@title", params["BLOG_TITLE"] +
-                                          " - "+title, 1)
-                article += replace_tags(article_gen_fh.read(),
-                                        search_list,
-                                        replace_list)
-            with open("gen/footer.gen", "r") as footer_gen_fh:
-                article += footer_gen_fh.read()
-            article_fh.write(article)
-            print("[INFO] (ARTICLES) Article page for "+filename[4:] +
-                  " has been generated successfully.")
-    except IOError:
-        sys.exit("[ERROR] An error occurred while generating article " +
-                 filename[4:]+" page.")
 
 # Regenerate page for years / months
 years_list.sort(reverse=True)
