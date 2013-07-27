@@ -702,3 +702,42 @@ for i in years_list:
             page_year_fh.write(page_year)
     except IOError:
         sys.exit("[ERROR] Unable to write index file for "+i+".")
+
+# Generate archive page
+archives = header.replace("@title", params["BLOG_TITLE"]+" - Archives", 1)
+
+years_list = os.listdir("blog/")
+years_list.sort(reverse=True)
+
+archives += "<ul>"
+for i in years_list:
+    if not os.path.isdir("blog/"+i):
+        continue
+
+    try:
+        int(i)
+    except ValueError:
+        continue
+
+    archives += "<li><a href=\""+params["BLOG_URL"]+i+"\">"+i+"</a></li>"
+    archives += "<ul>"
+
+    months_list = os.listdir("blog/"+i)
+    months_list.sort(reverse=True)
+    for j in months_list:
+        if not os.path.isdir("blog/"+i+"/"+j):
+            continue
+
+        archives += ("<li><a href=\""+params["BLOG_URL"] + i +
+                     "/"+j+"\">"+datetime.datetime.
+                     strptime(j, "%m").strftime("%B")+"<a></li>")
+    archives += "</ul>"
+
+archives += "</ul>"
+archives += footer
+
+try:
+    with open("blog/archives.html", "w") as archives_fh:
+        archives_fh.write(archives)
+except IOError:
+    sys.exit("[ERROR] Unable to write blog/archives.html file.")
