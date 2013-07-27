@@ -4,7 +4,6 @@
 # TODO : Test the whole thing
 # TODO : What happens when I run it as a hook ?
 # TODO : What happens when I commit with -a option ?
-# TODO : git ls-files
 
 import sys
 import getopt
@@ -20,6 +19,14 @@ from time import gmtime, strftime, mktime
 # Test if a variable exists (== isset function in PHP)
 def isset(variable):
     return variable in locals() or variable in globals()
+
+
+def isint(variable):
+    try:
+        int(variable)
+        return True
+    except ValueError:
+        return False
 
 
 # List all files in path directory
@@ -50,30 +57,19 @@ def get_tags(fh):
 
 # Return the number latest articles in dir directory
 def latest_articles(directory, number):
-    now = datetime.datetime.now()
-    counter = 0
-    latest_articles = []
-
-    for i in range(int(now.strftime('%Y')), 0, -1):
-        if counter >= number:
-            break
-
-        if os.path.isdir(directory+"/"+str(i)):
-            for j in range(12, 0, -1):
-                if j < 10:
-                    j = "0"+str(j)
-
-                if os.path.isdir(directory+"/"+str(i)+"/"+str(j)):
-                    articles_list = list_directory(directory+str(i)+"/"+str(j))
-                    # Sort by date the articles
-                    articles_list.sort(key=lambda x: os.stat(x).st_mtime)
-
-                    latest_articles += articles_list[:number-counter]
-                    if len(latest_articles) < number-counter:
-                        counter += len(articles_list)
-                    else:
-                        counter = number
-    return latest_articles
+    try:
+        latest_articles = subprocess.check_output(["git",
+                                                  "ls-files",
+                                                  directory],
+                                                  universal_newlines=True)
+    except:
+        sys.exit("[ERROR] An error occurred when fetching file changes "
+                 "from git.")
+    latest_articles = latest_articles.strip().split("\n")
+    latest_articles = [x for x in latest_articles if isint(x[4:8])]
+    latest_articles.sort(key=lambda x: (x[4:11], os.stat(x).st_mtime),
+                         reverse=True)
+    return latest_articles[:number]
 
 
 # Auto create necessary directories to write a file
@@ -537,7 +533,7 @@ for i, article in enumerate(["gen/"+x[4:-5]+".gen" for x in last_articles]):
     if i < 5:
         articles_header += "<li>"
         articles_header += ("<a href=\""+params["BLOG_URL"] +
-                            article[4:-5]+".html\">"+title+"</a>")
+                            article[4:-4]+".html\">"+title+"</a>")
         articles_header += "</li>"
 
     articles_index += content
