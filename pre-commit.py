@@ -469,15 +469,41 @@ header = header.replace("@blog_url", params["BLOG_URL"], 1)
 articles_header = "<ul>"
 articles_index = "<ul>"
 
-# Generate header (except title) + index file
-del title
+rss = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+       "<rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\" "
+       "xmlns:content=\"http://purl.org/rss/1.0/modules/content/\">\n")
+rss += ("\t<channel>"
+        "\t\t<atom:link href=\""+params["BLOG_URL"]+"rss.xml\" "
+        "rel=\"self\" type=\"application/rss+xml\"/>\n"
+        "\t\t<title>"+params["BLOG_TITLE"]+"</title>\n"
+        "\t\t<link>"+params["BLOG_URL"]+"</link>\n"
+        "\t\t<description>"+params["DESCRIPTION"]+"</description>\n"
+        "\t\t<language>"+params["LANGUAGE"]+"</language>\n"
+        "\t\t<copyright>"+params["COPYRIGHT"]+"</copyright>\n"
+        "\t\t<webMaster>"+params["WEBMASTER"]+"</webMaster>\n"
+        "\t\t<lastBuildDate>" +
+        strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())+"</lastBuildDate>\n")
+
+
+# Generate header (except title) + index file + rss file
 for i, article in enumerate(last_articles):
+    content, title, tags, date, author = "", "", "", "", ""
     try:
         with open(article, "r") as fh:
             for line in fh.readlines():
+                content += line
                 if "@title=" in line:
                     title = line[line.find("@title=")+7:].strip()
-                    break
+                    continue
+                if "@date=" in line:
+                    date = line[line.find("@date=")+6:].strip()
+                    continue
+                if "@author=" in line:
+                    author = line[line.find("@author=")+7:].strip()
+                    continue
+                if "@tags=" in line:
+                    tags = line[line.find("@tags=")+6:].strip()
+                    continue
     except IOError:
         sys.exit("[ERROR] Unable to open "+article+" file.")
 
@@ -494,6 +520,25 @@ for i, article in enumerate(last_articles):
     articles_index += ("<a href=\""+params["BLOG_URL"] +
                        article[4:-4]+".html\">"+title+"</a>")
     articles_index += "</li>"
+
+    date_rss = strftime("%a, %d %b %Y %H:%M:%S +0000",
+                        gmtime(mktime(datetime.datetime.strptime(date,
+                                                                 "%d%m%Y-%H%M")
+                                      .timetuple())))
+
+    rss += ("\t\t<item>\n"
+            "\t\t\t<title>"+title+"</title>\n"
+            "\t\t\t<link>"+params["BLOG_URL"]+article[5:]+"</link>\n"
+            "\t\t\t<guid isPermaLink=\"false\">" +
+            params["BLOG_URL"]+article[5:]+"</guid>\n"
+            "\t\t\t<description><![CDATA[" +
+            replace_tags(article, search_list, replace_list) +
+            "]]></description>\n"
+            "\t\t\t<pubDate>"+date_rss+"</pubDate>\n"
+            "\t\t\t<category>"+', '.join(tags)+"</category>\n"
+            "\t\t\t<author>"+params["WEBMASTER"]+"</author>\n"
+            "\t\t</item>\n")
+
 
 # Finishing header gen
 articles_header += "</ul>"
@@ -530,6 +575,15 @@ except IOError:
     sys.exit("[ERROR] Error while creating index.html file")
 except IOError:
     sys.exit("[ERROR] Unable to open index.html file for writing.")
+
+# Finishing rss gen
+rss += "\t</channel>\n</rss>"
+
+try:
+    with open("blog/rss.xml", "w") as rss_fh:
+        rss_fh.write(rss)
+except IOError:
+    sys.exit("[ERROR] An error occurred while writing RSS file.")
 
 # Regenerate tags pages
 for tag in tags_full_list:
@@ -569,14 +623,19 @@ for filename in added_files+modified_files:
                 title = line[title_pos+7:]
                 article_gen_fh.seek(0)
 
-                article = article.replace("@title", params["BLOG_TITLE"]+" - "+title, 1)
-                article += replace_tags(article_gen_fh.read(), search_list, replace_list)
+                article = article.replace("@title", params["BLOG_TITLE"] +
+                                          " - "+title, 1)
+                article += replace_tags(article_gen_fh.read(),
+                                        search_list,
+                                        replace_list)
             with open("gen/footer.gen", "r") as footer_gen_fh:
                 article += footer_gen_fh.read()
             article_fh.write(article)
-            print("[INFO] (ARTICLES) Article page for "+filename[4:]+" has been generated successfully.")
+            print("[INFO] (ARTICLES) Article page for "+filename[4:] +
+                  " has been generated successfully.")
     except IOError:
-        sys.exit("[ERROR] An error occurred while generating article "+filename[4:]+" page.")
+        sys.exit("[ERROR] An error occurred while generating article " +
+                 filename[4:]+" page.")
 
 #======================================
 # Generate pages for each year and month
@@ -630,56 +689,3 @@ for i in years_list:
             page_year_fh.write(page_year)
     except IOError:
         sys.exit("[ERROR] Unable to write index file for "+i+".")
-
-
-# Generate RSS
-rss = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\" xmlns:content=\"http://purl.org/rss/1.0/modules/content/\">"
-rss += "<channel><atom:link href=\""+params["BLOG_URL"]+"rss.xml\" rel=\"self\" type=\"application/rss+xml\"/><title>"+params["BLOG_TITLE"]+"</title><link>"+params["BLOG_URL"]+"</link>"
-rss += "<description>"+params["DESCRIPTION"]+"</description><language>"+params["LANGUAGE"]+"</language><copyright>"+params["COPYRIGHT"]+"</copyright>"
-rss += "<webMaster>"+params["WEBMASTER"]+"</webMaster><lastBuildDate>"+strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())+"</lastBuildDate>"
-
-for article in last_articles:
-    del date, title
-    try:
-        with open(article, "r") as article_fh:
-            tags = get_tags(article_fh)
-            article_fh.seek(0)
-
-            for line in article_fh.readlines():
-                if "@title=" in line:
-                    line = line.strip()
-                    title_pos = line.find("@title=")
-                    title = line[title_pos+7:].strip()
-                    continue
-
-                if "@date=" in line:
-                    line = line.strip()
-                    date_pos = line.find("@date=")
-                    date = line[date_pos+6:].strip()
-                    continue
-
-                if isset("date") and isset("title"):
-                    break
-
-            date = strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime(mktime(datetime.datetime.strptime(date, "%d%m%Y-%H%M").timetuple())))
-            article_fh.seek(0)
-
-            rss += "<item> \
-                        <title>"+title+"</title> \
-                        <link>"+params["BLOG_URL"]+article[5:]+"</link> \
-                        <guid isPermaLink=\"false\">"+params["BLOG_URL"]+article[5:]+"</guid> \
-                        <description><![CDATA["+replace_tags(article_fh.read(), search_list, replace_list)+"]]></description> \
-                        <pubDate>"+date+"</pubDate> \
-                        <category>"+', '.join(tags)+"</category> \
-                        <author>"+params["WEBMASTER"]+"</author> \
-                    </item>"
-    except IOError:
-        sys.exit("[ERROR] Unable to read article "+article+" to generate RSS file.")
-
-rss += "</channel></rss>"
-
-try:
-    with open("blog/rss.xml", "w") as rss_fh:
-        rss_fh.write(rss)
-except IOError:
-    sys.exit("[ERROR] An error occurred while writing RSS file.")
