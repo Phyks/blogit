@@ -145,6 +145,10 @@ modified_files = []
 deleted_files = []
 added_files = []
 
+#Lists of years and months with modified files
+years_list = []
+months_list = []
+
 if not force_regen:
     # Find the changes to be committed
     try:
@@ -190,8 +194,15 @@ for filename in list(added_files):
 
     try:
         int(filename[4:8])
+        years_list.append(filename[4:8])
     except ValueError:
         direct_copy = True
+
+    try:
+        int(filename[8:10])
+        months_list.append(filename[8:10])
+    except ValueError:
+        pass
 
     if ((not filename.endswith(".html") and not filename.endswith(".ignore"))
        or direct_copy):
@@ -216,11 +227,17 @@ for filename in list(modified_files):
     if not filename.startswith("raw/"):
         modified_files.remove(filename)
         continue
-
     try:
-        int(filename[4:6])
+        int(filename[4:8])
+        years_list.append(filename[4:8])
     except ValueError:
         direct_copy = True
+
+    try:
+        int(filename[8:10])
+        months_list.append(filename[8:10])
+    except ValueError:
+        pass
 
     if ((not filename.endswith("html") and not filename.endswith("ignore"))
        or direct_copy):
@@ -245,10 +262,16 @@ for filename in list(deleted_files):
         continue
 
     try:
-        int(filename[4:6])
+        int(filename[4:8])
+        years_list.append(filename[4:8])
     except ValueError:
         direct_delete = True
-        continue
+
+    try:
+        int(filename[8:10])
+        months_list.append(filename[8:10])
+    except ValueError:
+        pass
 
     if ((not filename.endswith("html") and not filename.endswith("ignore"))
        or direct_delete):
@@ -638,7 +661,6 @@ for filename in added_files+modified_files:
                  filename[4:]+" page.")
 
 # Regenerate page for years / months
-years_list = os.listdir("blog/")
 years_list.sort(reverse=True)
 for i in years_list:
     try:
@@ -649,25 +671,29 @@ for i in years_list:
     # Generate page per year
     page_year = header.replace("@title", params["BLOG_TITLE"]+" - "+i, 1)
 
-    months_list = os.listdir("blog/"+i)
     months_list.sort(reverse=True)
     for j in months_list:
         if not os.path.isdir("blog/"+i+"/"+j):
             continue
 
         # Generate pages per month
-        page_month = header.replace("@title", params["BLOG_TITLE"]+" - "+i+"/"+j, 1)
+        page_month = header.replace("@title",
+                                    params["BLOG_TITLE"]+" - "+i+"/"+j, 1)
 
         articles_list = list_directory("gen/"+i+"/"+j)
         articles_list.sort(key=lambda x: os.stat(x).st_mtime, reverse=True)
         for article in articles_list:
             try:
                 with open(article, "r") as article_fh:
-                    article_content = replace_tags(article_fh.read(), search_list, replace_list)
+                    article_content = replace_tags(article_fh.read(),
+                                                   search_list, replace_list)
                     page_month += article_content
                     page_year += article_content
             except IOError:
-                sys.exit("[ERROR] Error while generating years and months pages. Check your gen folder, you may need to regenerate some articles. The error was due to "+article+".")
+                sys.exit("[ERROR] Error while generating years and "
+                         "months pages. Check your gen folder, you "
+                         "may need to regenerate some articles. The "
+                         "error was due to "+article+".")
 
         page_month += footer
         try:
