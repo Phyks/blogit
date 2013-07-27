@@ -1,11 +1,9 @@
 #!/usr/bin/python
 
-# TODO : Orthographe dans les messages d'erreur
 # TODO : What happens when a file is moved with git ?
 # TODO : Test the whole thing
 # TODO : What happens when I run it as a hook ?
 # TODO : What happens when I commit with -a option ?
-# TODO : Harmonize messages and erros
 
 import sys
 import getopt
@@ -150,7 +148,11 @@ added_files = []
 if not force_regen:
     # Find the changes to be committed
     try:
-        changes = subprocess.check_output(["git", "diff", "--cached", "--name-status"], universal_newlines=True)
+        changes = subprocess.check_output(["git",
+                                           "diff",
+                                           "--cached",
+                                           "--name-status"],
+                                          universal_newlines=True)
     except:
         sys.exit("[ERROR] An error occurred when fetching file changes "
                  "from git.")
@@ -302,23 +304,42 @@ for filename in modified_files:
                    and filename[4:] not in tag_file.read()):
                     tag_file.seek(0, 2)  # Append to end of file
                     tag_file.write(filename[4:]+"\n")
-                    print("[INFO] (TAGS) Found new tag "+tag[:tag.index(".tmp")]+" for modified article "+filename[4:]+".")
+                    print("[INFO] (TAGS) Found new tag "
+                          + tag[:tag.index(".tmp")]+" for modified article "
+                          + filename[4:]+".")
                     tags.remove(tag_file[9:])
                 if (tag[tag.index("tags/") + 5:tag.index(".tmp")] not in tags
                    and filename[4:] in tag_file.read()):
-                    tag_file_old_content = tag_file.read()
+                    tag_old = tag_file.read()
                     tag_file.truncate()
-                    tag_file.write(tag_file_old_content.replace(filename[4:]+"\n", ""))
-                    print("[INFO] (TAGS) Deleted tag "+tag[:tag.index(".tmp")]+" in modified article "+filename[4:]+".")
+                    # Delete file in tag
+                    tag_file_write = tag_old.replace(filename[4:]+"\n", "")
+
+                    if tag_file_write:
+                        tag_file.write(tag_file_write)
+                        print("[INFO] (TAGS) Deleted tag " +
+                              tag[:tag.index(".tmp")]+" in modified article " +
+                              filename[4:]+".")
                     tags.remove(tag_file[9:])
         except IOError:
             sys.exit("[ERROR] (TAGS) An error occurred when parsing tags "
                      " of article "+filename[4:]+".")
 
+        if not tag_file_write:
+            try:
+                os.unlink(tag)
+                print("[INFO] (TAGS) No more article with tag " +
+                      tag[8:-4]+", deleting it.")
+            except FileNotFoundError:
+                print("[INFO] (TAGS) "+tag+" was found to be empty "
+                      "but there was an error during deletion. "
+                      "You should check manually.")
+
     for tag in tags:  # New tags created
         try:
             auto_dir("gen/tags/"+tag+".tmp")
-            with open("gen/tags/"+tag+".tmp", "a+") as tag_file:  # Delete tag file here if empty after deletion
+            with open("gen/tags/"+tag+".tmp", "a+") as tag_file:
+            # Delete tag file here if empty after deletion
                 tag_file.write(filename[4:]+"\n")
                 print("[INFO] (TAGS) Found new tag "+tag+" for "
                       "modified article "+filename[4:]+".")
@@ -340,13 +361,17 @@ for filename in deleted_files:
 
     for tag in tags:
         try:
-            with open("gen/tags/"+tag+".tmp", 'r+') as tag_file:  # Delete tag file here if empty after deletion
-                tag_file_old_content = tag_file.read()
+            with open("gen/tags/"+tag+".tmp", 'r+') as tag_file:
+                tag_old = tag_file.read()
                 tag_file.truncate()
                 # Delete file in tag
-                tag_file_write = tag_file_old_content.replace(filename[4:]+"\n", "")
+                tag_file_write = tag_old.replace(filename[4:]+"\n", "")
                 if tag_file_write:
                     tag_file.write(tag_file_write)
+                    print("[INFO] (TAGS) Deleted tag " +
+                          tag[:tag.index(".tmp")]+" in deleted article " +
+                          filename[4:]+".")
+
         except IOError:
             sys.exit("[ERROR] An error occurred while deleting article" +
                      filename[4:]+" from tags files.")
@@ -354,20 +379,24 @@ for filename in deleted_files:
         if not tag_file_write:
             try:
                 os.unlink(tag)
-                print("[INFO] (TAGS) No more article with tag "+tag[8:-4]+", deleting it.")
+                print("[INFO] (TAGS) No more article with tag " +
+                      tag[8:-4]+", deleting it.")
             except FileNotFoundError:
-                print("[INFO] (TAGS) "+tag+" was found to be empty but there was an error during deletion. You should check manually.")
+                print("[INFO] (TAGS) "+tag+" was found to be empty "
+                      "but there was an error during deletion. "
+                      "You should check manually.")
 
     # Delete generated files
     try:
         os.unlink("gen/"+filename[4:-5]+".gen")
         os.unlink("blog/"+filename[4:])
     except FileNotFoundError:
-        print("[INFO] (DELETION) Article "+filename[4:]+" seems to not have already been "
-              "generated. You should check manually.")
+        print("[INFO] (DELETION) Article "+filename[4:]+" seems "
+              "to not have already been generated. "
+              "You should check manually.")
 
-    print("[INFO] (DELETION) Deleted article "+filename[4:]+" in both gen and blog "
-          "directories")
+    print("[INFO] (DELETION) Deleted article "+filename[4:] +
+          " in both gen and blog directories")
 
 
 # Common lists that are used multiple times
@@ -394,27 +423,40 @@ for filename in added_files+modified_files:
                     tags = line[line.find("@tags=")+6:].strip()
                     continue
     except IOError:
-        print("[ERROR] An error occurred while generating article "+filename[4:]+".")
+        print("[ERROR] An error occurred while generating article " +
+              filename[4:]+".")
 
     if not isset("tags") or not isset("title") or not isset("author"):
-        sys.exit("[ERROR] Missing parameters (title, author, date, tags) in article "+filename[4:]+".")
+        sys.exit("[ERROR] Missing parameters (title, author, date, tags) "
+                 "in article "+filename[4:]+".")
 
-    date_readable = "Le "+date[0:2]+"/"+date[2:4]+"/"+date[4:8]+" à "+date[9:11]+":"+date[11:13]
+    date_readable = ("Le "+date[0:2]+"/"+date[2:4]+"/"+date[4:8] +
+                     " à "+date[9:11]+":"+date[11:13])
 
     # Write generated HTML for this article in gen /
     article = replace_tags(article, search_list, replace_list)
     try:
         auto_dir("gen/"+filename[4:-5]+".gen")
         with open("gen/"+filename[4:-5]+".gen", 'w') as article_file:
-            article_file.write("<article><nav class=\"aside_article\"></nav><div class=\"article\"><h1>"+title+"</h1>"+article+"<p class=\"date\">"+date+"</p></div>\n")
+            article_file.write("<article>\n"
+                               "\t<nav class=\"aside_article\"></nav>\n"
+                               "\t<div class=\"article\">\n"
+                               "\t\t<h1>"+title+"</h1>\n"
+                               "\t\t"+article+"\n"
+                               "\t\t<p class=\"date\">"+date+"</p>\n"
+                               "\t</div>\n")
             print("[INFO] (GEN ARTICLES) Article "+filename[4:]+" generated")
     except IOError:
-        sys.exit("[ERROR] An error occurred when writing generated HTML for article "+filename[4:]+".")
+        sys.exit("[ERROR] An error occurred when writing generated HTML for "
+                 "article "+filename[4:]+".")
 
 # Starting to generate header file (except title)
 tags_header = "<ul>"
 for tag in tags_full_list:
-    tags_header += "<li><a href=\""+params["BLOG_URL"]+tag[4:-4]+".html\">"+tag[9:-4]+"</a></li>"
+    tags_header += "<li>"
+    tags_header += ("<a href=\""+params["BLOG_URL"]+tag[4:-4]+".html\">" +
+                    tag[9:-4]+"</a>")
+    tags_header += "</li>"
 tags_header += "</ul>"
 try:
     with open("raw/header.html", "r") as header_fh:
@@ -443,9 +485,15 @@ for i, article in enumerate(last_articles):
         sys.exit("[ERROR] No title found in article "+article[4:]+".")
 
     if i < 5:
-        articles_header += "<li><a href=\""+params["BLOG_URL"]+article[4:-4]+".html\">"+title+"</a></li>"
+        articles_header += "<li>"
+        articles_header += ("<a href=\""+params["BLOG_URL"] +
+                            article[4:-4]+".html\">"+title+"</a>")
+        articles_header += "</li>"
 
-    articles_index += "<li><a href=\""+params["BLOG_URL"]+article[4:-4]+".html\">"+title+"</a></li>"
+    articles_index += "<li>"
+    articles_index += ("<a href=\""+params["BLOG_URL"] +
+                       article[4:-4]+".html\">"+title+"</a>")
+    articles_index += "</li>"
 
 # Finishing header gen
 articles_header += "</ul>"
@@ -466,11 +514,13 @@ try:
     with open("raw/footer.html", "r") as footer_fh:
         footer = footer_fh.read()
 except IOError:
-    sys.exit("[ERROR] An error occurred while parsing footer file raw/footer.html.")
+    sys.exit("[ERROR] An error occurred while parsing footer "
+             "file raw/footer.html.")
 
 # Finishing index gen
 articles_index += "</ul>"
-index = header.replace("@title", params["BLOG_TITLE"], 1) + articles_index + footer
+index = (header.replace("@title", params["BLOG_TITLE"], 1) +
+         articles_index + footer)
 
 try:
     with open("blog/index.html", "w") as index_fh:
@@ -483,7 +533,8 @@ except IOError:
 
 # Regenerate tags pages
 for tag in tags_full_list:
-    tag_content = header.replace("@title", params["BLOG_TITLE"]+" - "+tag[4:-4], 1)
+    tag_content = header.replace("@title", params["BLOG_TITLE"] +
+                                 " - "+tag[4:-4], 1)
 
     with open(tag, "r") as tag_gen_fh:
         for line in tag_gen_fh.readlines():
@@ -496,9 +547,11 @@ for tag in tags_full_list:
         auto_dir(tag.replace("gen/", "blog/"))
         with open(tag.replace("gen/", "blog/")[:-4]+".html", "w") as tag_fh:
             tag_fh.write(tag_content)
-            print("[INFO] (TAGS) Tag page for "+tag[9:-4]+" has been generated successfully.")
+            print("[INFO] (TAGS) Tag page for "+tag[9:-4] +
+                  " has been generated successfully.")
     except IOError:
-        sys.exit("[ERROR] An error occurred while generating tag page \""+tag[9:-4]+"\"")
+        sys.exit("[ERROR] An error occurred while generating tag page \"" +
+                 tag[9:-4]+"\"")
 
 # Finish articles pages generation
 for filename in added_files+modified_files:
