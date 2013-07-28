@@ -4,7 +4,6 @@
 # TODO : Test the whole thing
 # TODO : What happens when I run it as a hook ?
 # TODO : What happens when I commit with -a option ?
-# TODO : Use date in article instead of os date
 
 import sys
 import getopt
@@ -42,19 +41,35 @@ def list_directory(path):
     return fichier
 
 
-# Return a list with the tags of a given article (fh)
-def get_tags(fh):
-    tag_line = ''
-    for line in fh.readlines():
-        if "@tags=" in line:
-            tag_line = line
-            break
+# Return a list with the tags of a given article
+def get_tags(filename):
+    try:
+        with open(filename, 'r') as fh:
+            tag_line = ''
+            for line in fh.readlines():
+                if "@tags=" in line:
+                    tag_line = line
+                    break
 
-    if not tag_line:
-        return []
+            if not tag_line:
+                return []
 
-    tags = [x.strip() for x in line[line.find("@tags=")+6:].split(",")]
-    return tags
+            tags = [x.strip() for x in line[line.find("@tags=")+6:].split(",")]
+            return tags
+    except IOError:
+        sys.exit("[ERROR] Unable to open file "+filename+".")
+
+
+#Return date of an article
+def get_date(filename):
+    try:
+        with open(filename, 'r') as fh:
+            for line in fh.readlines():
+                if "@date=" in line:
+                    return line[line.find("@date=")+6:].strip()
+        sys.exit("[ERROR] Unable to determine date in article "+filename+".")
+    except IOError:
+        sys.exit("[ERROR] Unable to open file "+filename+".")
 
 
 # Return the number latest articles in dir directory
@@ -69,7 +84,7 @@ def latest_articles(directory, number):
                  "from git.")
     latest_articles = latest_articles.strip().split("\n")
     latest_articles = [x for x in latest_articles if isint(x[4:8])]
-    latest_articles.sort(key=lambda x: (x[4:11], os.stat(x).st_mtime),
+    latest_articles.sort(key=lambda x: get_date(x),
                          reverse=True)
     return latest_articles[:number]
 
@@ -295,11 +310,7 @@ print("[INFO] Deleted filed : "+", ".join(deleted_files))
 
 print("[INFO] Updating tags for added and modified files.")
 for filename in added_files:
-    try:
-        with open(filename, 'r') as fh:
-            tags = get_tags(fh)
-    except IOError:
-        sys.exit("[ERROR] Unable to open file "+filename+".")
+    tags = get_tags(filename)
 
     if not tags:
         sys.exit("[ERROR] (TAGS) In added article "+filename[4:]+" : "
@@ -380,11 +391,7 @@ for filename in modified_files:
 
 # Delete tags for deleted files and delete all generated files
 for filename in deleted_files:
-    try:
-        with open(filename, 'r') as fh:
-            tags = get_tags(fh)
-    except IOError:
-        sys.exit("[ERROR] Unable to open file "+filename+".")
+    tags = get_tags(filename)
 
     if not tags:
         sys.exit("[ERROR] In deleted article "+filename[4:]+" : "
@@ -680,7 +687,7 @@ for i in years_list:
                                     params["BLOG_TITLE"]+" - "+i+"/"+j, 1)
 
         articles_list = list_directory("gen/"+i+"/"+j)
-        articles_list.sort(key=lambda x: os.stat(x).st_mtime, reverse=True)
+        articles_list.sort(key=lambda x: get_date(x), reverse=True)
         for article in articles_list:
             try:
                 with open(article, "r") as article_fh:
