@@ -4,6 +4,7 @@
 # TODO : Test the whole thing
 # TODO : What happens when I run it as a hook ?
 # TODO : What happens when I commit with -a option ?
+# TODO : Use date in article instead of os date
 
 import sys
 import getopt
@@ -12,6 +13,7 @@ import os
 import datetime
 import subprocess
 import re
+import locale
 
 from time import gmtime, strftime, mktime
 
@@ -90,6 +92,9 @@ def replace_tags(article, search_list, replace_list):
         return_string = re.sub(search, replace, article)
     return return_string
 
+
+# Set locale
+locale.set_locale(locale.LC_ALL, '')
 
 try:
     opts, args = getopt.gnu_getopt(sys.argv, "hf", ["help", "force-regen"])
