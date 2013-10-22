@@ -11,9 +11,9 @@
 # -----------------------------------------------------------------------------
 # "THE NO-ALCOHOL BEER-WARE LICENSE" (Revision 42):
 # Phyks (webmaster@phyks.me) wrote this file. As long as you retain this notice
-# you can do whatever you want with this stuff (and you can also do whatever 
-# you want with this stuff without retaining it, but that's not cool...). If 
-# we meet some day, and you think this stuff is worth it, you can buy me a 
+# you can do whatever you want with this stuff (and you can also do whatever
+# you want with this stuff without retaining it, but that's not cool...). If
+# we meet some day, and you think this stuff is worth it, you can buy me a
 # <del>beer</del> soda in return.
 #																		Phyks
 #  ----------------------------------------------------------------------------
@@ -135,7 +135,7 @@ def replace_tags(article, search_list, replace_list):
 
 
 # Set locale
-locale.set_locale(locale.LC_ALL, '')
+locale.setlocale(locale.LC_ALL, '')
 
 
 # ========================
@@ -166,6 +166,8 @@ for opt, arg in opts:
 # Set parameters with params file
 search_list = []
 replace_list = []
+months = ["January", "February", "March", "April", "May", "Juin", "July",
+          "August", "September", "October", "November", "December"]
 try:
     with open("raw/params", "r") as params_fh:
         params = {}
@@ -174,9 +176,11 @@ try:
                 continue
             option, value = line.split("=", 1)
             if option == "SEARCH":
-                search_list = value.strip().split(",")
+                search_list = [i.strip() for i in value.split(",")]
             elif option == "REPLACE":
-                replace_list = value.strip().split(",")
+                replace_list = [i.strip() for i in value.split(",")]
+            elif option == "MONTHS":
+                months = [i.strip() for i in value.split(",")]
             else:
                 params[option.strip()] = value.strip()
 
@@ -360,8 +364,7 @@ for filename in added_files:
 
 for filename in modified_files:
     try:
-        with open(filename, 'r') as fh:
-            tags = get_tags(fh)
+        tags = get_tags(filename)
     except IOError:
         sys.exit("[ERROR] Unable to open file "+filename[4:]+".")
 
@@ -392,20 +395,21 @@ for filename in modified_files:
                         print("[INFO] (TAGS) Deleted tag " +
                               tag[:tag.index(".tmp")]+" in modified article " +
                               filename[4:]+".")
+                    else:
+                        try:
+                            os.unlink(tag)
+                            print("[INFO] (TAGS) No more article with tag " +
+                                  tag[8:-4]+", deleting it.")
+                        except FileNotFoundError:
+                            print("[INFO] (TAGS) "+tag+" was found to be empty "
+                                  "but there was an error during deletion. "
+                                  "You should check manually.")
+
                     tags.remove(tag_file[9:])
+
         except IOError:
             sys.exit("[ERROR] (TAGS) An error occurred when parsing tags "
                      " of article "+filename[4:]+".")
-
-        if not tag_file_write:
-            try:
-                os.unlink(tag)
-                print("[INFO] (TAGS) No more article with tag " +
-                      tag[8:-4]+", deleting it.")
-            except FileNotFoundError:
-                print("[INFO] (TAGS) "+tag+" was found to be empty "
-                      "but there was an error during deletion. "
-                      "You should check manually.")
 
     for tag in tags:  # New tags created
         try:
@@ -500,6 +504,8 @@ for filename in added_files+modified_files:
 
     date_readable = ("Le "+date[0:2]+"/"+date[2:4]+"/"+date[4:8] +
                      " à "+date[9:11]+":"+date[11:13])
+    day_aside = date[0:2]
+    month_aside = months[int(date[2:4]) - 1]
 
     # Write generated HTML for this article in gen /
     article = replace_tags(article, search_list, replace_list)
@@ -507,9 +513,12 @@ for filename in added_files+modified_files:
         auto_dir("gen/"+filename[4:-5]+".gen")
         with open("gen/"+filename[4:-5]+".gen", 'w') as article_file:
             article_file.write("<article>\n"
-                               "\t<nav class=\"aside_article\"></nav>\n"
+                               "\t<aside class=\"aside_article\">\n"
+                               "\t\t<p class=\"day\">"+day_aside+"</p>\n"
+                               "\t\t<p class=\"month\">"+month_aside+"</p>\n"
+                               "\t</aside>\n"
                                "\t<div class=\"article\">\n"
-                               "\t\t<h1>"+title+"</h1>\n"
+                               "\t\t<h1 class=\"article_title\">"+title+"</h1>\n"
                                "\t\t"+article+"\n"
                                "\t\t<p class=\"date\">"+date_readable+"</p>\n"
                                "\t</div>\n"
@@ -520,13 +529,12 @@ for filename in added_files+modified_files:
                  "article "+filename[4:]+".")
 
 # Starting to generate header file (except title)
-tags_header = "<ul>"
+tags_header = ""
 for tag in tags_full_list:
-    tags_header += "<li>"
-    tags_header += ("<a href=\""+params["BLOG_URL"]+tag[4:-4]+".html\">" +
-                    tag[9:-4]+"</a>")
-    tags_header += "</li>"
-tags_header += "</ul>"
+    tags_header += "<div class=\"categories\">"
+    tags_header += "<img alt=\"test\" src=\"tags/test.png\"/>"
+    tags_header += ("<span class=\"popup\">"+tag[9:-4]+"</span>")
+    tags_header += "</div>"
 try:
     with open("raw/header.html", "r") as header_fh:
         header = header_fh.read()
@@ -535,7 +543,7 @@ except IOError:
 
 header = header.replace("@tags", tags_header, 1)
 header = header.replace("@blog_url", params["BLOG_URL"], 1)
-articles_header = "<ul>"
+articles_header = "<ul id=\"last_articles\">"
 articles_index = ""
 
 rss = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -691,7 +699,7 @@ for article in added_files+modified_files:
         auto_dir("blog/"+article[4:])
         with open("blog/"+article[4:], "w") as article_fh:
             article_fh.write(content)
-            print("[INFO] (GEN ARTICLES) HTML file generated in blog dir for"
+            print("[INFO] (GEN ARTICLES) HTML file generated in blog dir for "
                   "article "+article[4:]+".")
     except IOError:
         sys.exit("[ERROR] Unable to write blog/"+article[4:]+" file.")
