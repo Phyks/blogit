@@ -1,9 +1,22 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
-# TODO : What happens when a file is moved with git ?
-# TODO : Test the whole thing
-# TODO : What happens when I run it as a hook ?
-# TODO : What happens when I commit with -a option ?
+# Blogit script written by Phyks (Lucas Verney) for his personnal use. I
+# distribute it with absolutely no warranty, except that it works for me on my
+# blog :)
+
+# This script is a pre-commit hook that should be placed in your .git/hooks
+# folder to work. Read README file for more info.
+
+# LICENSE :
+# -----------------------------------------------------------------------------
+# "THE NO-ALCOHOL BEER-WARE LICENSE" (Revision 42):
+# Phyks (webmaster@phyks.me) wrote this file. As long as you retain this notice
+# you can do whatever you want with this stuff (and you can also do whatever 
+# you want with this stuff without retaining it, but that's not cool...). If 
+# we meet some day, and you think this stuff is worth it, you can buy me a 
+# <del>beer</del> soda in return.
+#																		Phyks
+#  ----------------------------------------------------------------------------
 
 import sys
 import getopt
@@ -17,11 +30,18 @@ import locale
 from time import gmtime, strftime, mktime
 
 
+# =========
+# Functions
+# =========
+
 # Test if a variable exists (== isset function in PHP)
+# ====================================================
 def isset(variable):
     return variable in locals() or variable in globals()
 
 
+# Test wether a variable is an int or not
+# =======================================
 def isint(variable):
     try:
         int(variable)
@@ -33,6 +53,7 @@ def isint(variable):
 # List all files in path directory
 # Works recursively
 # Return files list with path relative to current dir
+# ===================================================
 def list_directory(path):
     fichier = []
     for root, dirs, files in os.walk(path):
@@ -42,6 +63,7 @@ def list_directory(path):
 
 
 # Return a list with the tags of a given article
+# ==============================================
 def get_tags(filename):
     try:
         with open(filename, 'r') as fh:
@@ -61,6 +83,7 @@ def get_tags(filename):
 
 
 #Return date of an article
+# ========================
 def get_date(filename):
     try:
         with open(filename, 'r') as fh:
@@ -72,7 +95,8 @@ def get_date(filename):
         sys.exit("[ERROR] Unable to open file "+filename+".")
 
 
-# Return the number latest articles in dir directory
+# Return the _number_ latest articles in _dir_ directory
+# ======================================================
 def latest_articles(directory, number):
     try:
         latest_articles = subprocess.check_output(["git",
@@ -90,6 +114,7 @@ def latest_articles(directory, number):
 
 
 # Auto create necessary directories to write a file
+# =================================================
 def auto_dir(path):
     directory = os.path.dirname(path)
     try:
@@ -101,6 +126,7 @@ def auto_dir(path):
 
 
 # Replace some user specific syntax tags (to repplace smileys for example)
+# ========================================================================
 def replace_tags(article, search_list, replace_list):
     return_string = article
     for search, replace in zip(search_list, replace_list):
@@ -111,6 +137,10 @@ def replace_tags(article, search_list, replace_list):
 # Set locale
 locale.set_locale(locale.LC_ALL, '')
 
+
+# ========================
+# Start of the main script
+# ========================
 try:
     opts, args = getopt.gnu_getopt(sys.argv, "hf", ["help", "force-regen"])
 except getopt.GetoptError:
