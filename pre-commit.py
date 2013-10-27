@@ -821,3 +821,27 @@ try:
         archives_fh.write(archives)
 except IOError:
     sys.exit("[ERROR] Unable to write blog/archives.html file.")
+
+# Include header and footer for pages that need it
+for i in os.listdir("blog/"):
+    if (os.path.isdir("blog/"+i) or i in ["header.html", "footer.html",
+                                          "rss.xml", "style.css", "index.html",
+                                          "archives.html", "humans.txt"]):
+        continue
+
+    with open("blog/"+i, 'r+') as fh:
+        content = fh.read()
+        fh.seek(0)
+
+        if content.find("#header") != -1:
+            content = content.replace("#header",
+                                      header.replace("@title",
+                                                     (params["BLOG_TITLE"] +
+                                                      " - "+i[:-5].title()),
+                                                     1),
+                                      1)
+            fh.write(content)
+            fh.seek(0)
+
+        if content.find("#footer") != -1:
+            fh.write(content.replace("#footer", footer, 1))
