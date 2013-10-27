@@ -28,6 +28,7 @@ import re
 import locale
 
 from time import gmtime, strftime, mktime
+from bs4 import BeautifulSoup
 
 
 # =========
@@ -134,6 +135,16 @@ def replace_tags(article, search_list, replace_list):
     return return_string
 
 
+# Return text in <div class="article"> for rss description
+# ========================================================
+def get_text_rss(content):
+    soup = BeautifulSoup(content) 
+    date = soup.find(attrs={'class': 'date'})
+    date.extract()
+    title = soup.find(attrs={'class': 'article_title'})
+    title.extract()
+    return str(soup.div)
+
 # Set locale
 locale.setlocale(locale.LC_ALL, '')
 
@@ -175,12 +186,18 @@ try:
             if line.strip() == "" or line.strip().startswith("#"):
                 continue
             option, value = line.split("=", 1)
+            option = option.strip()
+
             if option == "SEARCH":
                 search_list = [i.strip() for i in value.split(",")]
             elif option == "REPLACE":
                 replace_list = [i.strip() for i in value.split(",")]
             elif option == "MONTHS":
                 months = [i.strip() for i in value.split(",")]
+            elif option == "IGNORE_FILES":
+                params["IGNORE_FILES"] = [i.strip() for i in value.split(",")]
+            elif option == "BLOG_URL":
+                params["BLOG_URL"] = value.strip(" \n\t\r/")
             else:
                 params[option.strip()] = value.strip()
 
@@ -190,6 +207,7 @@ except IOError:
              "parameters. Does such a file exist ? See doc for more info "
              "on this file.")
 
+print("[INFO] Blog url is "+params["BLOG_URL"]+".")
 
 # Fill lists for modified, deleted and added files
 modified_files = []
@@ -227,9 +245,12 @@ if not force_regen:
         else:
             sys.exit("[ERROR] An error occurred when running git diff.")
 else:
-    shutil.rmtree("blog/")
-    shutil.rmtree("gen/")
-    added_files = list_directory("raw")
+    try:
+        shutil.rmtree("blog/")
+        shutil.rmtree("gen/")
+        added_files = list_directory("raw")
+    except FileNotFoundError:
+        pass
 
 if not added_files and not modified_files and not deleted_files:
     sys.exit("[ERROR] Nothing to do... Did you add new files with "
@@ -239,7 +260,8 @@ if not added_files and not modified_files and not deleted_files:
 for filename in list(added_files):
     direct_copy = False
 
-    if not filename.startswith("raw/"):
+    if (not filename.startswith("raw/") or filename.endswith("~") or
+       filename in params["IGNORE_FILES"]):
         added_files.remove(filename)
         continue
 
@@ -277,7 +299,8 @@ for filename in list(added_files):
 for filename in list(modified_files):
     direct_copy = False
 
-    if not filename.startswith("raw/"):
+    if (not filename.startswith("raw/") or filename.endswith("~")
+       or filename in params["IGNORE_FILES"]):
         modified_files.remove(filename)
         continue
     try:
@@ -312,7 +335,8 @@ for filename in list(modified_files):
 for filename in list(deleted_files):
     direct_copy = False
 
-    if not filename.startswith("raw/"):
+    if (not filename.startswith("raw/") or filename.endswith("~") or
+       filename in params["IGNORE_FILES"]):
         deleted_files.remove(filename)
         continue
 
@@ -401,8 +425,8 @@ for filename in modified_files:
                             print("[INFO] (TAGS) No more article with tag " +
                                   tag[8:-4]+", deleting it.")
                         except FileNotFoundError:
-                            print("[INFO] (TAGS) "+tag+" was found to be empty "
-                                  "but there was an error during deletion. "
+                            print("[INFO] (TAGS) "+tag+" was found to be empty"
+                                  " but there was an error during deletion. "
                                   "You should check manually.")
 
                     tags.remove(tag_file[9:])
@@ -518,7 +542,9 @@ for filename in added_files+modified_files:
                                "\t\t<p class=\"month\">"+month_aside+"</p>\n"
                                "\t</aside>\n"
                                "\t<div class=\"article\">\n"
-                               "\t\t<h1 class=\"article_title\">"+title+"</h1>\n"
+                               "\t\t<h1 class=\"article_title\"><a " +
+                               "href=\""+params["BLOG_URL"]+"/"+filename[4:] +
+                               "\">"+title+"</a></h1>\n"
                                "\t\t"+article+"\n"
                                "\t\t<p class=\"date\">"+date_readable+"</p>\n"
                                "\t</div>\n"
@@ -542,7 +568,7 @@ except IOError:
     sys.exit("[ERROR] Unable to open raw/header.html file.")
 
 header = header.replace("@tags", tags_header, 1)
-header = header.replace("@blog_url", params["BLOG_URL"], 1)
+header = header.replace("@blog_url", params["BLOG_URL"])
 articles_header = "<ul id=\"last_articles\">"
 articles_index = ""
 
@@ -550,7 +576,7 @@ rss = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
        "<rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\" "
        "xmlns:content=\"http://purl.org/rss/1.0/modules/content/\">\n")
 rss += ("\t<channel>"
-        "\t\t<atom:link href=\""+params["BLOG_URL"]+"rss.xml\" "
+        "\t\t<atom:link href=\""+params["BLOG_URL"]+"/rss.xml\" "
         "rel=\"self\" type=\"application/rss+xml\"/>\n"
         "\t\t<title>"+params["BLOG_TITLE"]+"</title>\n"
         "\t\t<link>"+params["BLOG_URL"]+"</link>\n"
@@ -589,7 +615,7 @@ for i, article in enumerate(["gen/"+x[4:-5]+".gen" for x in last_articles]):
 
     if i < 5:
         articles_header += "<li>"
-        articles_header += ("<a href=\""+params["BLOG_URL"] +
+        articles_header += ("<a href=\""+params["BLOG_URL"] + "/" +
                             article[4:-4]+".html\">"+title+"</a>")
         articles_header += "</li>"
 
@@ -601,11 +627,11 @@ for i, article in enumerate(["gen/"+x[4:-5]+".gen" for x in last_articles]):
 
     rss += ("\t\t<item>\n"
             "\t\t\t<title>"+title+"</title>\n"
-            "\t\t\t<link>"+params["BLOG_URL"]+article[5:]+"</link>\n"
+            "\t\t\t<link>"+params["BLOG_URL"]+"/"+article[5:]+"</link>\n"
             "\t\t\t<guid isPermaLink=\"false\">" +
-            params["BLOG_URL"]+article[5:]+"</guid>\n"
+            params["BLOG_URL"]+"/"+article[5:]+"</guid>\n"
             "\t\t\t<description><![CDATA[" +
-            replace_tags(article, search_list, replace_list) +
+            replace_tags(get_text_rss(content), search_list, replace_list) +
             "]]></description>\n"
             "\t\t\t<pubDate>"+date_rss+"</pubDate>\n"
             "\t\t\t<category>"+', '.join(tags)+"</category>\n"
@@ -614,7 +640,8 @@ for i, article in enumerate(["gen/"+x[4:-5]+".gen" for x in last_articles]):
 
 
 # Finishing header gen
-articles_header += "</ul>"
+articles_header += ("</ul><p><a "+"href=\""+params["BLOG_URL"] +
+                    "/archives.html\">"+"Archives</a></p>")
 header = header.replace("@articles", articles_header, 1)
 
 try:
@@ -637,7 +664,8 @@ except IOError:
 
 # Finishing index gen
 index = (header.replace("@title", params["BLOG_TITLE"], 1) +
-         articles_index + footer)
+         articles_index + "<p class=\"archives\"><a "+"href=\"" +
+         params["BLOG_URL"]+"/archives.html\">Archives</a></p>"+footer)
 
 try:
     with open("blog/index.html", "w") as index_fh:
@@ -759,7 +787,8 @@ archives = header.replace("@title", params["BLOG_TITLE"]+" - Archives", 1)
 years_list = os.listdir("blog/")
 years_list.sort(reverse=True)
 
-archives += "<ul>"
+archives += ("<article><div class=\"article\"><h1 " +
+             "class=\"article_title\">Archives</h1><ul>")
 for i in years_list:
     if not os.path.isdir("blog/"+i):
         continue
@@ -769,7 +798,7 @@ for i in years_list:
     except ValueError:
         continue
 
-    archives += "<li><a href=\""+params["BLOG_URL"]+i+"\">"+i+"</a></li>"
+    archives += "<li><a href=\""+params["BLOG_URL"]+"/"+i+"\">"+i+"</a></li>"
     archives += "<ul>"
 
     months_list = os.listdir("blog/"+i)
@@ -778,12 +807,12 @@ for i in years_list:
         if not os.path.isdir("blog/"+i+"/"+j):
             continue
 
-        archives += ("<li><a href=\""+params["BLOG_URL"] + i +
+        archives += ("<li><a href=\""+params["BLOG_URL"] + "/" + i +
                      "/"+j+"\">"+datetime.datetime.
                      strptime(j, "%m").strftime("%B")+"<a></li>")
     archives += "</ul>"
 
-archives += "</ul>"
+archives += "</ul></div></article>"
 archives += footer
 
 try:
