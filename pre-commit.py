@@ -138,7 +138,7 @@ def replace_tags(article, search_list, replace_list):
 # Return text in <div class="article"> for rss description
 # ========================================================
 def get_text_rss(content):
-    soup = BeautifulSoup(content) 
+    soup = BeautifulSoup(content)
     date = soup.find(attrs={'class': 'date'})
     date.extract()
     title = soup.find(attrs={'class': 'article_title'})
@@ -558,7 +558,8 @@ for filename in added_files+modified_files:
 tags_header = ""
 for tag in tags_full_list:
     tags_header += "<div class=\"categories\">"
-    tags_header += "<img alt=\"test\" src=\"tags/test.png\"/>"
+    tags_header += ("<img alt=\"test\" " +
+                    "src=\""+params["BLOG_URL"]+"/tags/"+tag[9:-4]+".png\"/>")
     tags_header += ("<span class=\"popup\">"+tag[9:-4]+"</span>")
     tags_header += "</div>"
 try:
