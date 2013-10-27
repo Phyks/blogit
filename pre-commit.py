@@ -531,6 +531,15 @@ for filename in added_files+modified_files:
     day_aside = date[0:2]
     month_aside = months[int(date[2:4]) - 1]
 
+    tags_comma = ""
+    tags = [i.strip() for i in tags.split(",")]
+    for tag in tags:
+        if tags_comma != "":
+            tags_comma += ", "
+
+        tags_comma += ("<a href=\""+params["BLOG_URL"]+"/tags/"+tag+".html\">" +
+                       tag+"</a>")
+
     # Write generated HTML for this article in gen /
     article = replace_tags(article, search_list, replace_list)
     try:
@@ -547,6 +556,7 @@ for filename in added_files+modified_files:
                                "\">"+title+"</a></h1>\n"
                                "\t\t"+article+"\n"
                                "\t\t<p class=\"date\">"+date_readable+"</p>\n"
+                               "\t\t<p class=\"tags\">"+tags_comma+"</p>\n"
                                "\t</div>\n"
                                "</article>\n")
             print("[INFO] (GEN ARTICLES) Article "+filename[4:]+" generated")
