@@ -1,30 +1,41 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
-	<head>
-		<meta charset="utf-8">
-		<title>@titre</title>
-		<link rel="stylesheet" href="style.css">
-	</head>
-<body>
-	<div id="wrapper">
-		<div id="left">
-			<h1 id="head_title">Phyks' Blog</h1>
-			<hr/><hr/>
-			<h2>Catégories</h2>
-				<div id="categories">
-					@categories
-				</div>
-				<hr/>
-			<h2>Derniers articles</h2>
-				<div id="last_articles">
-					@articles
-				</div>
-			<hr/>
-			<h2>Liens</h2>
-				<ul class="links">
-					<li><a href="contact.html">Me contacter</a></li>
-					<li><a href="http://links.phyks.me">Mon shaarli</a></li>
-					<li><a href="http://projet.phyks.me">Mes projets</a></li>
-				</ul>
-		</div>
-		<div id="articles">
+    <head>
+        <meta charset="utf-8">
+        <title>@titre</title>
+		<link rel="stylesheet" href="design.css"/>
+        <link type="text/plain" rel="author" href="humans.txt"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <div id="wrapper">
+            <!-- Sidebar -->
+                <div id="sidebar-wrapper">
+                    <h1 id="sidebar-title"><a href="#base_url">~Phyks</a></h1>
+
+                    <h2>Catégories</h2>
+                        <nav id="sidebar-tags">
+                            @tags
+                        </nav>
+
+                    <h2>Derniers articles</h2>
+                        <ul id="sidebar-articles">
+                            @articles
+                        </ul>
+
+                    <h2>Liens</h2>
+                        <ul id="sidebar-links">
+                            <li><a href="contact.html" title="Contact">Me contacter</a></li>
+                            <li class="monospace"><a href="//links.phyks.me" title="Mon Shaarli">find ~phyks -type l</a></li>
+                            <li><a href="https://github.com/phyks/" title="Github">Mon Github</a></li>
+                            <li><a href="divers.html" title="Divers">Divers</a></li>
+                        </ul>
+                </div>
+
+            <!-- Page content -->
+            <div id="header">
+                <h1><a href="#base_url">~Phyks</a></h1>
+            </div>
+                
+            <div id="articles">
+

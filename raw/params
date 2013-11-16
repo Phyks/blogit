@@ -1,12 +1,12 @@
 BLOG_TITLE = Phyks' blog
 NB_ARTICLES_INDEX = 20
-BLOG_URL = file:///home/lucas/Blog/git/blog/
+BLOG_URL = http://localhost/Blog_test/blog/
 
 #RSS params
 WEBMASTER = webmaster@phyks.me (Phyks)
 LANGUAGE = fr
-DESCRIPTION = 
-COPYRIGHT = 
+DESCRIPTION = Test de desc
+COPYRIGHT = CC L0
 
 #Personal replacements
 #Items are passed as arguments to a python regex,

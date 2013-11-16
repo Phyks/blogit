@@ -537,8 +537,8 @@ for filename in added_files+modified_files:
         if tags_comma != "":
             tags_comma += ", "
 
-        tags_comma += ("<a href=\""+params["BLOG_URL"]+"/tags/"+tag+".html\">" +
-                       tag+"</a>")
+        tags_comma += ("<a href=\""+params["BLOG_URL"] +
+                       "/tags/"+tag+".html\">"+tag+"</a>")
 
     # Write generated HTML for this article in gen /
     article = replace_tags(article, search_list, replace_list)
@@ -556,7 +556,8 @@ for filename in added_files+modified_files:
                                "\">"+title+"</a></h1>\n"
                                "\t\t"+article+"\n"
                                "\t\t<p class=\"date\">"+date_readable+"</p>\n"
-                               "\t\t<p class=\"tags\">"+tags_comma+"</p>\n"
+                               "\t\t<p class=\"tags\">Tags : "+tags_comma +
+                               "</p>\n"
                                "\t</div>\n"
                                "</article>\n")
             print("[INFO] (GEN ARTICLES) Article "+filename[4:]+" generated")
@@ -567,7 +568,7 @@ for filename in added_files+modified_files:
 # Starting to generate header file (except title)
 tags_header = ""
 for tag in tags_full_list:
-    tags_header += "<div class=\"categories\">"
+    tags_header += "<div class=\"tag\">"
     tags_header += ("<img alt=\"test\" " +
                     "src=\""+params["BLOG_URL"]+"/tags/"+tag[9:-4]+".png\"/>")
     tags_header += ("<span class=\"popup\">"+tag[9:-4]+"</span>")
@@ -580,7 +581,7 @@ except IOError:
 
 header = header.replace("@tags", tags_header, 1)
 header = header.replace("@blog_url", params["BLOG_URL"])
-articles_header = "<ul id=\"last_articles\">"
+articles_header = ""
 articles_index = ""
 
 rss = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -651,8 +652,8 @@ for i, article in enumerate(["gen/"+x[4:-5]+".gen" for x in last_articles]):
 
 
 # Finishing header gen
-articles_header += ("</ul><p><a "+"href=\""+params["BLOG_URL"] +
-                    "/archives.html\">"+"Archives</a></p>")
+articles_header += ("<li><a "+"href=\""+params["BLOG_URL"] +
+                    "/archives.html\">"+"Archives</a></li>")
 header = header.replace("@articles", articles_header, 1)
 
 try:
