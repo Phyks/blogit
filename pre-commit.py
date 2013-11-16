@@ -844,8 +844,8 @@ for i in os.listdir("blog/"):
         content = fh.read()
         fh.seek(0)
 
-        if content.find("#header") != -1:
-            content = content.replace("#header",
+        if content.find("#include_header_here") != -1:
+            content = content.replace("#include_header_here",
                                       header.replace("@title",
                                                      (params["BLOG_TITLE"] +
                                                       " - "+i[:-5].title()),
@@ -854,5 +854,5 @@ for i in os.listdir("blog/"):
             fh.write(content)
             fh.seek(0)
 
-        if content.find("#footer") != -1:
-            fh.write(content.replace("#footer", footer, 1))
+        if content.find("#include_footer_here") != -1:
+            fh.write(content.replace("#include_footer_here", footer, 1))

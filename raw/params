@@ -2,6 +2,8 @@ BLOG_TITLE = Phyks' blog
 NB_ARTICLES_INDEX = 20
 BLOG_URL = http://localhost/Blog_test/blog/
 
+IGNORE_FILES = 
+
 #RSS params
 WEBMASTER = webmaster@phyks.me (Phyks)
 LANGUAGE = fr

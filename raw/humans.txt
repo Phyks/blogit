@@ -1,0 +1,11 @@
+/* AUTHOR */
+Phyks (Lucas Verney)
+Website : http://phyks.me
+Send me an e-mail : phyks@phyks.me
+Or contact me on jabber : phyks@phyks.me
+Or meet me on github : https://github.com/phyks/
+
+/* SITE */
+Last update: 2013/09/15
+Standards: HTML5, CSS3 (valid)
+Software: Only open-source software :)
