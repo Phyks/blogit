@@ -1,14 +1,14 @@
-BLOG_TITLE = Phyks' blog
+BLOG_TITLE = Blog
 NB_ARTICLES_INDEX = 20
-BLOG_URL = http://localhost/Blog_test/blog/
+BLOG_URL = #BLOG_URL
 
 IGNORE_FILES = 
 
 #RSS params
-WEBMASTER = webmaster@phyks.me (Phyks)
+WEBMASTER = #EMAIL_URL
 LANGUAGE = fr
-DESCRIPTION = Test de desc
-COPYRIGHT = CC L0
+DESCRIPTION = 
+COPYRIGHT = 
 
 #Personal replacements
 #Items are passed as arguments to a python regex,
