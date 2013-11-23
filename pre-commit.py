@@ -15,7 +15,7 @@
 # you want with this stuff without retaining it, but that's not cool...). If
 # we meet some day, and you think this stuff is worth it, you can buy me a
 # <del>beer</del> soda in return.
-#																		Phyks
+#									Phyks
 #  ----------------------------------------------------------------------------
 
 import sys
@@ -108,7 +108,8 @@ def latest_articles(directory, number):
         sys.exit("[ERROR] An error occurred when fetching file changes "
                  "from git.")
     latest_articles = latest_articles.strip().split("\n")
-    latest_articles = [x for x in latest_articles if isint(x[4:8])]
+    latest_articles = [x for x in latest_articles if(isint(x[4:8]) and
+                                                     x.endswith(".html"))]
     latest_articles.sort(key=lambda x: get_date(x),
                          reverse=True)
     return latest_articles[:number]
@@ -177,8 +178,8 @@ for opt, arg in opts:
 # Set parameters with params file
 search_list = []
 replace_list = []
-months = ["January", "February", "March", "April", "May", "Juin", "July",
-          "August", "September", "October", "November", "December"]
+months = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet",
+          "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
 try:
     with open("raw/params", "r") as params_fh:
         params = {}
@@ -355,10 +356,14 @@ for filename in list(deleted_files):
         pass
 
     if ((not filename.endswith("html") and not filename.endswith("ignore"))
-       or direct_delete):
+       or (isset("direct_delete") and direct_delete == True)):
         print("[INFO] (Deleted file) Delete directly copied file "
               + filename[4:]+" in blog dir.")
-        os.unlink(filename)
+        try:
+            os.unlink(filename)
+        except FileNotFoundError:
+            pass
+        os.system('git rm '+filename)
         deleted_files.remove(filename)
         continue
 
@@ -428,18 +433,19 @@ for filename in modified_files:
                             print("[INFO] (TAGS) "+tag+" was found to be empty"
                                   " but there was an error during deletion. "
                                   "You should check manually.")
+                        os.system('git rm '+tag)
 
-                    tags.remove(tag_file[9:])
+                    print(tags)
+                    tags.remove(tag[9:])
 
         except IOError:
             sys.exit("[ERROR] (TAGS) An error occurred when parsing tags "
                      " of article "+filename[4:]+".")
 
-    for tag in tags:  # New tags created
+    for tag in [x for x in tags if "gen/tags/"+x+".tmp" not in list_directory("gen/tags")]:  # New tags created
         try:
             auto_dir("gen/tags/"+tag+".tmp")
             with open("gen/tags/"+tag+".tmp", "a+") as tag_file:
-            # Delete tag file here if empty after deletion
                 tag_file.write(filename[4:]+"\n")
                 print("[INFO] (TAGS) Found new tag "+tag+" for "
                       "modified article "+filename[4:]+".")
@@ -449,7 +455,7 @@ for filename in modified_files:
 
 # Delete tags for deleted files and delete all generated files
 for filename in deleted_files:
-    tags = get_tags(filename)
+    tags = os.listdir("gen/tags/")
 
     if not tags:
         sys.exit("[ERROR] In deleted article "+filename[4:]+" : "
@@ -457,7 +463,7 @@ for filename in deleted_files:
 
     for tag in tags:
         try:
-            with open("gen/tags/"+tag+".tmp", 'r+') as tag_file:
+            with open("gen/tags/"+tag, 'r+') as tag_file:
                 tag_old = tag_file.read()
                 tag_file.truncate()
                 # Delete file in tag
@@ -469,7 +475,7 @@ for filename in deleted_files:
                           filename[4:]+".")
 
         except IOError:
-            sys.exit("[ERROR] An error occurred while deleting article" +
+            sys.exit("[ERROR] An error occurred while deleting article " +
                      filename[4:]+" from tags files.")
 
         if not tag_file_write:
@@ -481,6 +487,7 @@ for filename in deleted_files:
                 print("[INFO] (TAGS) "+tag+" was found to be empty "
                       "but there was an error during deletion. "
                       "You should check manually.")
+            os.system('git rm '+filename)
 
     # Delete generated files
     try:
@@ -490,6 +497,8 @@ for filename in deleted_files:
         print("[INFO] (DELETION) Article "+filename[4:]+" seems "
               "to not have already been generated. "
               "You should check manually.")
+    os.system("git rm gen/"+filename[4:-5]+".gen")
+    os.system("git rm blog/"+filename[4:])
 
     print("[INFO] (DELETION) Deleted article "+filename[4:] +
           " in both gen and blog directories")
@@ -542,6 +551,11 @@ for filename in added_files+modified_files:
 
     # Write generated HTML for this article in gen /
     article = replace_tags(article, search_list, replace_list)
+
+    # Handle @article_path
+    article_path = params["BLOG_URL"] + "/" + date[4:8] + "/" + date[2:4]
+    article = article.replace("@article_path", article_path)
+
     try:
         auto_dir("gen/"+filename[4:-5]+".gen")
         with open("gen/"+filename[4:-5]+".gen", 'w') as article_file:
@@ -569,9 +583,9 @@ for filename in added_files+modified_files:
 tags_header = ""
 for tag in tags_full_list:
     tags_header += "<div class=\"tag\">"
-    tags_header += ("<img alt=\"test\" " +
+    tags_header += ("<a href=\""+params["BLOG_URL"]+"/tags/"+tag[9:-4]+".html\"><img alt=\""+tag[9:-4]+"\" " +
                     "src=\""+params["BLOG_URL"]+"/tags/"+tag[9:-4]+".png\"/>")
-    tags_header += ("<span class=\"popup\">"+tag[9:-4]+"</span>")
+    tags_header += ("<span class=\"popup\">"+tag[9:-4]+"</span></a>")
     tags_header += "</div>"
 try:
     with open("raw/header.html", "r") as header_fh:
@@ -670,6 +684,7 @@ except IOError:
 try:
     with open("raw/footer.html", "r") as footer_fh:
         footer = footer_fh.read()
+        footer = footer.replace("@blog_url", params["BLOG_URL"])
 except IOError:
     sys.exit("[ERROR] An error occurred while parsing footer "
              "file raw/footer.html.")
@@ -821,7 +836,7 @@ for i in years_list:
 
         archives += ("<li><a href=\""+params["BLOG_URL"] + "/" + i +
                      "/"+j+"\">"+datetime.datetime.
-                     strptime(j, "%m").strftime("%B")+"<a></li>")
+                     strptime(j, "%m").strftime("%B").title()+"</a></li>")
     archives += "</ul>"
 
 archives += "</ul></div></article>"
@@ -840,6 +855,9 @@ for i in os.listdir("blog/"):
                                           "archives.html", "humans.txt"]):
         continue
 
+    if not i.endswith(".html"):
+        continue
+
     with open("blog/"+i, 'r+') as fh:
         content = fh.read()
         fh.seek(0)
@@ -856,3 +874,5 @@ for i in os.listdir("blog/"):
 
         if content.find("#include_footer_here") != -1:
             fh.write(content.replace("#include_footer_here", footer, 1))
+
+os.system("git add --ignore-removal blog/ gen/")
