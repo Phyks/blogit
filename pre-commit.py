@@ -560,18 +560,19 @@ for filename in added_files+modified_files:
         auto_dir("gen/"+filename[4:-5]+".gen")
         with open("gen/"+filename[4:-5]+".gen", 'w') as article_file:
             article_file.write("<article>\n"
-                               "\t<aside class=\"aside_article\">\n"
+                               "\t<aside>\n"
                                "\t\t<p class=\"day\">"+day_aside+"</p>\n"
                                "\t\t<p class=\"month\">"+month_aside+"</p>\n"
                                "\t</aside>\n"
                                "\t<div class=\"article\">\n"
-                               "\t\t<h1 class=\"article_title\"><a " +
+                               "\t\t<header><h1 class=\"article_title\"><a " +
                                "href=\""+params["BLOG_URL"]+"/"+filename[4:] +
-                               "\">"+title+"</a></h1>\n"
+                               "\">"+title+"</a></h1></header>\n"
                                "\t\t"+article+"\n"
-                               "\t\t<p class=\"date\">"+date_readable+"</p>\n"
-                               "\t\t<p class=\"tags\">Tags : "+tags_comma +
+                               "\t\t<footer><p class=\"date\">"+date_readable + 
                                "</p>\n"
+                               "\t\t<p class=\"tags\">Tags : "+tags_comma +
+                               "</p></footer>\n"
                                "\t</div>\n"
                                "</article>\n")
             print("[INFO] (GEN ARTICLES) Article "+filename[4:]+" generated")
