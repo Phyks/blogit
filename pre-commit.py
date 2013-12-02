@@ -27,6 +27,7 @@ import subprocess
 import re
 import locale
 
+from functools import cmp_to_key
 from time import gmtime, strftime, mktime
 from bs4 import BeautifulSoup
 
@@ -110,7 +111,8 @@ def latest_articles(directory, number):
     latest_articles = latest_articles.strip().split("\n")
     latest_articles = [x for x in latest_articles if(isint(x[4:8]) and
                                                      x.endswith(".html"))]
-    latest_articles.sort(key=lambda x: get_date(x),
+    latest_articles.sort(key=lambda x: (get_date(x)[4:8], get_date(x)[2:4],
+                                        get_date(x)[:2], get_date(x)[9:]),
                          reverse=True)
     return latest_articles[:number]
 
@@ -145,6 +147,9 @@ def get_text_rss(content):
     title = soup.find(attrs={'class': 'article_title'})
     title.extract()
     return str(soup.div)
+
+def remove_tags(html):
+    return ''.join( BeautifulSoup(html).findAll(text = True)) 
 
 # Set locale
 locale.setlocale(locale.LC_ALL, '')
@@ -248,10 +253,13 @@ if not force_regen:
 else:
     try:
         shutil.rmtree("blog/")
-        shutil.rmtree("gen/")
-        added_files = list_directory("raw")
     except FileNotFoundError:
         pass
+    try:
+        shutil.rmtree("gen/")
+    except FileNotFoundError:
+        pass
+    added_files = list_directory("raw")
 
 if not added_files and not modified_files and not deleted_files:
     sys.exit("[ERROR] Nothing to do... Did you add new files with "
@@ -582,11 +590,14 @@ for filename in added_files+modified_files:
 
 # Starting to generate header file (except title)
 tags_header = ""
-for tag in tags_full_list:
+for tag in sorted(tags_full_list, key=cmp_to_key(locale.strcoll)):
+    with open("gen/tags/"+tag[9:-4]+".tmp", "r") as tag_fh:
+        nb = len(tag_fh.readlines())
+
     tags_header += "<div class=\"tag\">"
-    tags_header += ("<a href=\""+params["BLOG_URL"]+"/tags/"+tag[9:-4]+".html\"><img alt=\""+tag[9:-4]+"\" " +
-                    "src=\""+params["BLOG_URL"]+"/tags/"+tag[9:-4]+".png\"/>")
-    tags_header += ("<span class=\"popup\">"+tag[9:-4]+"</span></a>")
+    tags_header += ("<a href=\""+params["BLOG_URL"]+"/tags/"+tag[9:-4]+".html\">")
+    tags_header += ("/"+tag[9:-4]+" ("+str(nb)+")")
+    tags_header += ("</a> ")
     tags_header += "</div>"
 try:
     with open("raw/header.html", "r") as header_fh:
@@ -653,15 +664,15 @@ for i, article in enumerate(["gen/"+x[4:-5]+".gen" for x in last_articles]):
                                       .timetuple())))
 
     rss += ("\t\t<item>\n"
-            "\t\t\t<title>"+title+"</title>\n"
-            "\t\t\t<link>"+params["BLOG_URL"]+"/"+article[5:]+"</link>\n"
+            "\t\t\t<title>"+remove_tags(title)+"</title>\n"
+            "\t\t\t<link>"+params["BLOG_URL"]+"/"+article[4:-4]+".html</link>\n"
             "\t\t\t<guid isPermaLink=\"false\">" +
-            params["BLOG_URL"]+"/"+article[5:]+"</guid>\n"
+            params["BLOG_URL"]+"/"+article[4:-4]+"</guid>\n"
             "\t\t\t<description><![CDATA[" +
             replace_tags(get_text_rss(content), search_list, replace_list) +
             "]]></description>\n"
             "\t\t\t<pubDate>"+date_rss+"</pubDate>\n"
-            "\t\t\t<category>"+', '.join(tags)+"</category>\n"
+            "\t\t\t<category>"+', '.join([i.strip() for i in tags.split(",")])+"</category>\n"
             "\t\t\t<author>"+params["WEBMASTER"]+"</author>\n"
             "\t\t</item>\n")
 
