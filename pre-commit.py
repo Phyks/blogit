@@ -148,8 +148,9 @@ def get_text_rss(content):
     title.extract()
     return str(soup.div)
 
+
 def remove_tags(html):
-    return ''.join( BeautifulSoup(html).findAll(text = True)) 
+    return ''.join(BeautifulSoup(html).findAll(text=True))
 
 # Set locale
 locale.setlocale(locale.LC_ALL, '')
@@ -364,7 +365,7 @@ for filename in list(deleted_files):
         pass
 
     if ((not filename.endswith("html") and not filename.endswith("ignore"))
-       or (isset("direct_delete") and direct_delete == True)):
+       or (isset("direct_delete") and direct_delete is True)):
         print("[INFO] (Deleted file) Delete directly copied file "
               + filename[4:]+" in blog dir.")
         try:
@@ -450,7 +451,9 @@ for filename in modified_files:
             sys.exit("[ERROR] (TAGS) An error occurred when parsing tags "
                      " of article "+filename[4:]+".")
 
-    for tag in [x for x in tags if "gen/tags/"+x+".tmp" not in list_directory("gen/tags")]:  # New tags created
+    # New tags created
+    for tag in [x for x in tags if "gen/tags/"+x+".tmp"
+                not in list_directory("gen/tags")]:
         try:
             auto_dir("gen/tags/"+tag+".tmp")
             with open("gen/tags/"+tag+".tmp", "a+") as tag_file:
@@ -577,7 +580,7 @@ for filename in added_files+modified_files:
                                "href=\""+params["BLOG_URL"]+"/"+filename[4:] +
                                "\">"+title+"</a></h1></header>\n"
                                "\t\t"+article+"\n"
-                               "\t\t<footer><p class=\"date\">"+date_readable + 
+                               "\t\t<footer><p class=\"date\">"+date_readable +
                                "</p>\n"
                                "\t\t<p class=\"tags\">Tags : "+tags_comma +
                                "</p></footer>\n"
@@ -595,7 +598,8 @@ for tag in sorted(tags_full_list, key=cmp_to_key(locale.strcoll)):
         nb = len(tag_fh.readlines())
 
     tags_header += "<div class=\"tag\">"
-    tags_header += ("<a href=\""+params["BLOG_URL"]+"/tags/"+tag[9:-4]+".html\">")
+    tags_header += ("<a href=\""+params["BLOG_URL"] +
+                    "/tags/"+tag[9:-4]+".html\">")
     tags_header += ("/"+tag[9:-4]+" ("+str(nb)+")")
     tags_header += ("</a> ")
     tags_header += "</div>"
@@ -610,9 +614,15 @@ header = header.replace("@blog_url", params["BLOG_URL"])
 articles_header = ""
 articles_index = ""
 
-rss = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-       "<rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\" "
-       "xmlns:content=\"http://purl.org/rss/1.0/modules/content/\">\n")
+rss = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+
+if os.path.isfile("raw/rss.css"):
+    rss += ("<?xml-stylesheet type=\"text/css\" " +
+            "href=\""+params["BLOG_URL"]+"/rss.css\"?>\n")
+
+
+rss += ("<rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\" "
+        "xmlns:content=\"http://purl.org/rss/1.0/modules/content/\">\n")
 rss += ("\t<channel>"
         "\t\t<atom:link href=\""+params["BLOG_URL"]+"/rss.xml\" "
         "rel=\"self\" type=\"application/rss+xml\"/>\n"
@@ -665,14 +675,16 @@ for i, article in enumerate(["gen/"+x[4:-5]+".gen" for x in last_articles]):
 
     rss += ("\t\t<item>\n"
             "\t\t\t<title>"+remove_tags(title)+"</title>\n"
-            "\t\t\t<link>"+params["BLOG_URL"]+"/"+article[4:-4]+".html</link>\n"
+            "\t\t\t<link>"+params["BLOG_URL"]+"/" +
+            article[4:-4]+".html</link>\n" +
             "\t\t\t<guid isPermaLink=\"false\">" +
             params["BLOG_URL"]+"/"+article[4:-4]+"</guid>\n"
             "\t\t\t<description><![CDATA[" +
             replace_tags(get_text_rss(content), search_list, replace_list) +
             "]]></description>\n"
             "\t\t\t<pubDate>"+date_rss+"</pubDate>\n"
-            "\t\t\t<category>"+', '.join([i.strip() for i in tags.split(",")])+"</category>\n"
+            "\t\t\t<category>" +
+            ', '.join([i.strip() for i in tags.split(",")])+"</category>\n"
             "\t\t\t<author>"+params["WEBMASTER"]+"</author>\n"
             "\t\t</item>\n")
 
