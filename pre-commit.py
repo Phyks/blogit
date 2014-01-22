@@ -204,7 +204,7 @@ try:
             elif option == "IGNORE_FILES":
                 params["IGNORE_FILES"] = [i.strip() for i in value.split(",")]
             elif option == "BLOG_URL":
-                params["BLOG_URL"] = value.strip(" \n\t\r/")
+                params["BLOG_URL"] = value.strip(" \n\t\r").rstrip("/")
             else:
                 params[option.strip()] = value.strip()
 
