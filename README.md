@@ -1,4 +1,5 @@
-Blogit ======
+Blogit
+======
 
 This script aims at building a static blog above a git repo. This way, you can
 use git abilities to have full archives and backups of your blog. Many scripts
