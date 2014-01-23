@@ -3,7 +3,7 @@ Blogit
 
 This script aims at building a static blog above a git repo. This way, you can use git abilities to have full archives and backups of your blog. Many scripts aims at doing this, and this is just one more. I needed something more personal and fitted to my needs, so I came up with this code. It's not very beautiful, can mostly be optimized but it's working for me. It may not be fitted to your needs, but it's up to you to see it.
 
-This script is just a python script that should be run as a git hook. You can see a working version on (my blog)[http://phyks.me] and the repository behind it is publicly viewable at http://git.phyks.me/Blog.
+This script is just a python script that should be run as a git hook. You can see a working version at http://phyks.me and the repository behind it is publicly viewable at http://git.phyks.me/Blog.
 
 This script has been developped by Phyks (phyks@phyks.me). For any suggestion or remark, please send me an e-mail.
 
@@ -43,12 +43,12 @@ All the files you have to edit are located in the `raw/` folder. It contains by 
 
 Articles can be edited in HTML directly or in Markdown. They must be located in a `raw/year/month` folder, according to their date of publication and end with .html for html articles and .md for markdown articles. The basic content of an article is:
 ````
-&lt;!--
+<!--
 	@author=AUTHOR_NAME
 	@date=DDMMYYYY-HHMM
 	@title=TITLE
 	@tags=TAGS
---&gt;
+-->
 CONTENT
 ````
 
@@ -71,14 +71,22 @@ You can also use `@tags` that will be replaced by the list of tags and `@article
 
 In static files, in raw folder (such as `divers.html` in the demo code), you can use `#base_url` that will be replaced by the base url of the blog, as defined in the parameters. This is useful to make some links.
 
+## Alternatives
+
+There exist many alternatives to this script, but they didn't fit my needs (and were not all tested) :
+
+* fugitive : http://shebang.ws/fugitive-readme.html
+* Jekyll : http://jekyllrb.com/ and Oktopress : http://octopress.org/
+* Blogofile : http://www.blogofile.com/
+
 ## LICENSE
 
-* --------------------------------------------------------------------------------
-* "THE NO-ALCOHOL BEER-WARE LICENSE" (Revision 42):
-* Phyks (webmaster@phyks.me) wrote this file. As long as you retain this notice you
-* can do whatever you want with this stuff (and you can also do whatever you want
-* with this stuff without retaining it, but that's not cool...). If we meet some 
-* day, and you think this stuff is worth it, you can buy me a <del>beer</del> soda 
-* in return.
-*																		Phyks
-* ---------------------------------------------------------------------------------
+    --------------------------------------------------------------------------------
+    "THE NO-ALCOHOL BEER-WARE LICENSE" (Revision 42):
+    Phyks (webmaster@phyks.me) wrote this file. As long as you retain this notice you
+    can do whatever you want with this stuff (and you can also do whatever you want
+    with this stuff without retaining it, but that's not cool...). If we meet some 
+    day, and you think this stuff is worth it, you can buy me a <del>beer</del> soda 
+    in return.
+   																		Phyks
+    ---------------------------------------------------------------------------------
