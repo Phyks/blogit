@@ -755,16 +755,16 @@ rss = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
 
 if os.path.isfile("raw/rss.css"):
     rss += ("<?xml-stylesheet type=\"text/css\" " +
-            "href=\""+params["BLOG_URL"]+"/rss.css\"?>\n")
+            "href=\""+params["PROTOCOL"]+params["BLOG_URL"]+"/rss.css\"?>\n")
 
 
 rss += ("<rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\" "
         "xmlns:content=\"http://purl.org/rss/1.0/modules/content/\">\n")
 rss += ("\t<channel>"
-        "\t\t<atom:link href=\""+params["BLOG_URL"]+"/rss.xml\" "
-        "rel=\"self\" type=\"application/rss+xml\"/>\n"
+        "\t\t<atom:link href=\""+params["PROTOCOL"]+params["BLOG_URL"] +
+        "/rss.xml\" rel=\"self\" type=\"application/rss+xml\"/>\n"
         "\t\t<title>"+params["BLOG_TITLE"]+"</title>\n"
-        "\t\t<link>"+params["BLOG_URL"]+"</link>\n"
+        "\t\t<link>"+params["PROTOCOL"] + params["BLOG_URL"]+"</link>\n"
         "\t\t<description>"+params["DESCRIPTION"]+"</description>\n"
         "\t\t<language>"+params["LANGUAGE"]+"</language>\n"
         "\t\t<copyright>"+params["COPYRIGHT"]+"</copyright>\n"
@@ -812,10 +812,10 @@ for i, article in enumerate(["gen/"+x[4:-5]+".gen" for x in last_articles]):
 
     rss += ("\t\t<item>\n"
             "\t\t\t<title>"+remove_tags(title)+"</title>\n"
-            "\t\t\t<link>"+params["BLOG_URL"]+"/" +
+            "\t\t\t<link>"+params["PROTOCOL"]+params["BLOG_URL"]+"/" +
             article[4:-4]+".html</link>\n" +
             "\t\t\t<guid isPermaLink=\"false\">" +
-            params["BLOG_URL"]+"/"+article[4:-4]+"</guid>\n"
+            params["PROTOCOL"] + params["BLOG_URL"]+"/"+article[4:-4]+"</guid>\n"
             "\t\t\t<description><![CDATA[" +
             replace_tags(get_text_rss(content), search_list, replace_list) +
             "]]></description>\n"
@@ -878,11 +878,17 @@ for tag in tags_full_list:
     tag_content = header.replace("@title", params["BLOG_TITLE"] +
                                  " - "+tag[4:-4], 1)
 
+    # Sort by date
     with open(tag, "r") as tag_gen_fh:
-        for line in tag_gen_fh.readlines():
-            line = line.replace(".html", ".gen")
-            with open("gen/"+line.strip(), "r") as article_fh:
-                tag_content += article_fh.read()
+        articles_list = ["gen/"+line.replace(".html", ".gen").strip() for line
+                         in tag_gen_fh.readlines()]
+    articles_list.sort(key=lambda x: (get_date(x)[4:8], get_date(x)[2:4],
+                                        get_date(x)[:2], get_date(x)[9:]),
+                       reverse=True)
+
+    for article in articles_list:
+        with open(article.strip(), "r") as article_fh:
+            tag_content += article_fh.read()
 
     tag_content += footer
     try:
@@ -941,7 +947,10 @@ for i in years_list:
                                     params["BLOG_TITLE"]+" - "+i+"/"+j, 1)
 
         articles_list = list_directory("gen/"+i+"/"+j)
-        articles_list.sort(key=lambda x: get_date(x), reverse=True)
+        articles_list.sort(key=lambda x: (get_date(x)[4:8], get_date(x)[2:4],
+                                          get_date(x)[:2], get_date(x)[9:]),
+                           reverse=True)
+
         for article in articles_list:
             try:
                 with open(article, "r") as article_fh:
