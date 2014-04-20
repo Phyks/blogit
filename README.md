@@ -10,7 +10,9 @@ needs, but it's up to you to see it.
 
 This script is just a python script that should be run as a git hook. You can
 see a working version at http://phyks.me and the repository behind it is
-publicly viewable at http://git.phyks.me/Blog.
+publicly viewable at http://git.phyks.me/Blog. You should browse this
+repository for example configuration and usage if you are interested by this
+script.
 
 This script has been developped by Phyks (phyks@phyks.me). For any suggestion
 or remark, please send me an e-mail.
