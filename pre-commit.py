@@ -27,6 +27,7 @@ import subprocess
 import re
 import locale
 import markdown
+from email import utils
 from hashlib import md5
 
 from functools import cmp_to_key
@@ -770,7 +771,7 @@ rss += ("\t<channel>"
         "\t\t<copyright>"+params["COPYRIGHT"]+"</copyright>\n"
         "\t\t<webMaster>"+params["WEBMASTER"]+"</webMaster>\n"
         "\t\t<lastBuildDate>" +
-        strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())+"</lastBuildDate>\n")
+        utils.formatdate(mktime(gmtime()))+"</lastBuildDate>\n")
 
 
 # Generate header (except title) + index file + rss file
@@ -805,10 +806,11 @@ for i, article in enumerate(["gen/"+x[4:-5]+".gen" for x in last_articles]):
         articles_header += "</li>"
 
     articles_index += content
-    date_rss = strftime("%a, %d %b %Y %H:%M:%S +0000",
-                        gmtime(mktime(datetime.datetime.strptime(date,
-                                                                 "%d%m%Y-%H%M")
-                                      .timetuple())))
+    date_rss = utils.formatdate(mktime(gmtime(mktime(datetime.
+                                                     datetime.
+                                                     strptime(date,
+                                                              "%d%m%Y-%H%M")
+                                                     .timetuple()))))
 
     rss += ("\t\t<item>\n"
             "\t\t\t<title>"+remove_tags(title)+"</title>\n"
