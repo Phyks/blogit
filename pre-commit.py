@@ -781,6 +781,7 @@ rss += ("\t<channel>"
 # Generate header (except title) + index file + rss file
 for i, article in enumerate(["gen/"+x[4:-5]+".gen" for x in last_articles]):
     content, title, tags, date, author = "", "", "", "", ""
+    content_desc = ""
     try:
         with open(article, "r") as fh:
             for line in fh.readlines():
@@ -797,6 +798,7 @@ for i, article in enumerate(["gen/"+x[4:-5]+".gen" for x in last_articles]):
                 if "@tags=" in line:
                     tags = line[line.find("@tags=")+6:].strip()
                     continue
+                content_desc += line
     except IOError:
         sys.exit("[ERROR] Unable to open "+article+" file.")
 
@@ -823,7 +825,7 @@ for i, article in enumerate(["gen/"+x[4:-5]+".gen" for x in last_articles]):
             "\t\t\t<guid isPermaLink=\"true\">" +
             params["PROTOCOL"] + params["BLOG_URL"]+"/"+article[4:-4]+".html</guid>\n"
             # Apply remove_tags twice to also remove tags in @title and so
-            "\t\t\t<description>" + truncate(remove_tags(remove_tags(replace_tags(get_text_rss(content),
+            "\t\t\t<description>" + truncate(remove_tags(remove_tags(replace_tags(get_text_rss(content_desc),
                                                                                   search_list,
                                                                                   replace_list)))) +
             "</description>\n" +
