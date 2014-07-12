@@ -232,8 +232,8 @@ def get_date(filename):
 def latest_articles(directory, number):
     try:
         latest_articles = subprocess.check_output(["git",
-                                                  "ls-files",
-                                                  directory],
+                                                   "ls-files",
+                                                   directory],
                                                   universal_newlines=True)
     except:
         sys.exit("[ERROR] An error occurred when fetching file changes "
@@ -282,6 +282,10 @@ def get_text_rss(content):
 
 def remove_tags(html):
     return ''.join(BeautifulSoup(html).findAll(text=True))
+
+
+def truncate(text, length=100):
+    return text[:text.find('.', length) - 1] + "…"
 
 # Set locale
 locale.setlocale(locale.LC_ALL, '')
@@ -812,19 +816,27 @@ for i, article in enumerate(["gen/"+x[4:-5]+".gen" for x in last_articles]):
                                                               "%d%m%Y-%H%M")
                                                      .timetuple()))))
 
-    rss += ("\t\t<item>\n"
-            "\t\t\t<title>"+remove_tags(title)+"</title>\n"
+    rss += ("\t\t<item>\n" +
+            "\t\t\t<title>"+remove_tags(title)+"</title>\n" +
             "\t\t\t<link>"+params["PROTOCOL"]+params["BLOG_URL"]+"/" +
             article[4:-4]+".html</link>\n" +
-            "\t\t\t<guid isPermaLink=\"false\">" +
-            params["PROTOCOL"] + params["BLOG_URL"]+"/"+article[4:-4]+"</guid>\n"
-            "\t\t\t<description><![CDATA[" +
-            replace_tags(get_text_rss(content), search_list, replace_list) +
-            "]]></description>\n"
-            "\t\t\t<pubDate>"+date_rss+"</pubDate>\n"
-            "\t\t\t<category>" +
-            ', '.join([i.strip() for i in tags.split(",")])+"</category>\n"
-            "\t\t\t<author>"+params["WEBMASTER"]+"</author>\n"
+            "\t\t\t<guid isPermaLink=\"true\">" +
+            params["PROTOCOL"] + params["BLOG_URL"]+"/"+article[4:-4]+".html</guid>\n"
+            # Apply remove_tags twice to also remove tags in @title and so
+            "\t\t\t<description>" + truncate(remove_tags(remove_tags(replace_tags(get_text_rss(content),
+                                                                                  search_list,
+                                                                                  replace_list)))) +
+            "</description>\n" +
+            "\t\t\t<content:encoded><![CDATA[" +
+            replace_tags(get_text_rss(content),
+                         search_list,
+                         replace_list).replace(params['BLOG_URL'],
+                                               params['BLOG_URL_RSS']) +
+            "]]></content:encoded>\n" +
+            "\t\t\t<pubDate>"+date_rss+"</pubDate>\n" +
+            ("\n".join(["\t\t\t<category>" + i.strip() + "</category>"
+                        for i in tags.split(",")]))+"\n" +
+            "\t\t\t<author>"+params["WEBMASTER"]+"</author>\n" +
             "\t\t</item>\n")
 
 
@@ -885,7 +897,7 @@ for tag in tags_full_list:
         articles_list = ["gen/"+line.replace(".html", ".gen").strip() for line
                          in tag_gen_fh.readlines()]
     articles_list.sort(key=lambda x: (get_date(x)[4:8], get_date(x)[2:4],
-                                        get_date(x)[:2], get_date(x)[9:]),
+                                      get_date(x)[:2], get_date(x)[9:]),
                        reverse=True)
 
     for article in articles_list:
