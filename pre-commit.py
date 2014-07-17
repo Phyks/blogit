@@ -832,8 +832,8 @@ for i, article in enumerate(["gen/"+x[4:-5]+".gen" for x in last_articles]):
             "\t\t\t<content:encoded><![CDATA[" +
             replace_tags(get_text_rss(content),
                          search_list,
-                         replace_list).replace(params['BLOG_URL'],
-                                               params['BLOG_URL_RSS']) +
+                         replace_list).replace('"'+params['BLOG_URL'],
+                                               '"'+params['BLOG_URL_RSS']) +
             "]]></content:encoded>\n" +
             "\t\t\t<pubDate>"+date_rss+"</pubDate>\n" +
             ("\n".join(["\t\t\t<category>" + i.strip() + "</category>"
