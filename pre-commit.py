@@ -640,13 +640,13 @@ for filename in deleted_files:
 
     # Delete generated files
     try:
-        os.unlink("gen/"+filename[4:-5]+".gen")
+        os.unlink("gen/"+filename[4:filename.rfind('.')]+".gen")
         os.unlink("blog/"+filename[4:])
     except FileNotFoundError:
         print("[INFO] (DELETION) Article "+filename[4:]+" seems "
               "to not have already been generated. "
               "You should check manually.")
-    os.system("git rm gen/"+filename[4:-5]+".gen")
+    os.system("git rm gen/"+filename[4:filename.rfind('.')]+".gen")
     os.system("git rm blog/"+filename[4:])
 
     print("[INFO] (DELETION) Deleted article "+filename[4:] +
@@ -710,8 +710,8 @@ for filename in added_files+modified_files:
     article = article.replace("@article_path", article_path)
 
     try:
-        auto_dir("gen/"+filename[4:-5]+".gen")
-        with open("gen/"+filename[4:-5]+".gen", 'w') as article_file:
+        auto_dir("gen/"+filename[4:filename.rfind('.')]+".gen")
+        with open("gen/"+filename[4:filename.rfind('.')]+".gen", 'w') as article_file:
             article_file.write("<article>\n"
                                "\t<aside>\n"
                                "\t\t<p class=\"day\">"+day_aside+"</p>\n"
@@ -779,7 +779,7 @@ rss += ("\t<channel>"
 
 
 # Generate header (except title) + index file + rss file
-for i, article in enumerate(["gen/"+x[4:-5]+".gen" for x in last_articles]):
+for i, article in enumerate(["gen/"+x[4:x.rfind('.')]+".gen" for x in last_articles]):
     content, title, tags, date, author = "", "", "", "", ""
     content_desc = ""
     try:
@@ -896,7 +896,7 @@ for tag in tags_full_list:
 
     # Sort by date
     with open(tag, "r") as tag_gen_fh:
-        articles_list = ["gen/"+line.replace(".html", ".gen").strip() for line
+        articles_list = ["gen/"+line.replace(".html", ".gen").replace('.md', '.gen').strip() for line
                          in tag_gen_fh.readlines()]
     articles_list.sort(key=lambda x: (get_date(x)[4:8], get_date(x)[2:4],
                                       get_date(x)[:2], get_date(x)[9:]),
@@ -920,11 +920,11 @@ for tag in tags_full_list:
 # Finish generating HTML for articles (blog/ dir)
 for article in added_files+modified_files:
     try:
-        with open("gen/"+article[4:-5]+".gen", "r") as article_fh:
+        with open("gen/"+article[4:article.rfind('.')]+".gen", "r") as article_fh:
             content = article_fh.read()
     except IOError:
         sys.exit("[ERROR] An error occurred while opening"
-                 "gen/"+article[4:-5]+".gen file.")
+                 "gen/"+article[4:article.rfind('.')]+".gen file.")
 
     for line in content.split("\n"):
         if "@title=" in line:
@@ -1052,7 +1052,7 @@ for i in os.listdir("blog/"):
             content = content.replace("#include_header_here",
                                       header.replace("@title",
                                                      (params["BLOG_TITLE"] +
-                                                      " - "+i[:-5].title()),
+                                                      " - "+i[:i.rfind('.')].title()),
                                                      1),
                                       1)
             fh.write(content)
