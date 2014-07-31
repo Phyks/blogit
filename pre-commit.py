@@ -719,7 +719,7 @@ for filename in added_files+modified_files:
                                "\t</aside>\n"
                                "\t<div class=\"article\">\n"
                                "\t\t<header><h1 class=\"article_title\"><a " +
-                               "href=\""+params["BLOG_URL"]+"/"+filename[4:] +
+                               "href=\""+params["BLOG_URL"]+"/"+filename[4:filename.rfind('.')]+'.html' +
                                "\">"+title+"</a></h1></header>\n"
                                "\t\t"+article+"\n"
                                "\t\t<footer><p class=\"date\">"+date_readable +
@@ -934,13 +934,13 @@ for article in added_files+modified_files:
     content = header.replace("@title", params["BLOG_TITLE"] + " - " +
                              title, 1) + content + footer
     try:
-        auto_dir("blog/"+article[4:])
-        with open("blog/"+article[4:], "w") as article_fh:
+        auto_dir("blog/"+article[4:article.rfind('.')]+'.html')
+        with open("blog/"+article[4:article.rfind('.')]+'.html', "w") as article_fh:
             article_fh.write(content)
             print("[INFO] (GEN ARTICLES) HTML file generated in blog dir for "
-                  "article "+article[4:]+".")
+                  "article "+article[4:article.rfind('.')]+'.html'+".")
     except IOError:
-        sys.exit("[ERROR] Unable to write blog/"+article[4:]+" file.")
+        sys.exit("[ERROR] Unable to write blog/"+article[4:article.rfind('.')]+'.html'+" file.")
 
 # Regenerate pages for years / months
 years_list.sort(reverse=True)
