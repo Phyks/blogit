@@ -73,7 +73,16 @@ def gfm(text):
     text = re.sub(r'{gfm-extraction-([0-9a-f]{32})\}', pre_insert_callback,
                   text)
 
-    return text
+    def handle_typography(text):
+        """ Add non breakable spaces before double punctuation signs."""
+        text = text.replace(' :', '&nbsp;:')
+        text = text.replace(' ;', '&nbsp;;')
+        text = text.replace(' !', '&nbsp;!')
+        text = text.replace(' ?', '&nbsp;?')
+        text = text.replace(' /', '&nbsp;/')
+        return text
+
+    return handle_typography(text)
 
 
 # Test suite.
