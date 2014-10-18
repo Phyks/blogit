@@ -44,7 +44,7 @@ def gfm(text):
     extractions = {}
 
     def pre_extraction_callback(matchobj):
-        digest = md5(matchobj.group(0)).hexdigest()
+        digest = md5(matchobj.group(0).encode("utf-8")).hexdigest()
         extractions[digest] = matchobj.group(0)
         return "{gfm-extraction-%s}" % digest
     pattern = re.compile(r'<pre>.*?</pre>', re.MULTILINE | re.DOTALL)
@@ -567,7 +567,10 @@ for filename in modified_files:
                     print("[INFO] (TAGS) Found new tag "
                           + tag[:tag.index(".tmp")]+" for modified article "
                           + filename[4:]+".")
-                    tags.remove(tag_file[9:])
+                    try:
+                        tags.remove(tag[9:])
+                    except ValueError:
+                        pass
                 if (tag[tag.index("tags/") + 5:tag.index(".tmp")] not in tags
                    and filename[4:] in tag_file.read()):
                     tag_old = tag_file.read()
@@ -592,7 +595,10 @@ for filename in modified_files:
                         os.system('git rm '+tag)
 
                     print(tags)
-                    tags.remove(tag[9:])
+                    try:
+                        tags.remove(tag[9:])
+                    except ValueError:
+                        pass
 
         except IOError:
             sys.exit("[ERROR] (TAGS) An error occurred when parsing tags "
