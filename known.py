@@ -39,7 +39,7 @@ def known_api(username, api_key, type, payload):
                          data=payload,
                          headers=headers)
 
-if len(sys.arg) < 3:
+if len(sys.argv) < 3:
     print("Usage: "+sys.argv[0]+" USERNAME API_KEY [file]")
     sys.exit()
 
